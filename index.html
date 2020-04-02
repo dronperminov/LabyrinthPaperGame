@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Лабиринт</title>
+	<style>
+		canvas { border: 1px solid #000; margin: 0 20px }
+		.text { display: inline-block; width: 40%; vertical-align: top; text-align: left; }
+		.text p { margin-top: 0; }
+		.game { text-align: center; user-select: none; }
+		.icons { display: none; }
+		ul { list-style-position: inside; padding-left: 0 }
+	</style>
+</head>
+<body oncontextmenu="return false;">
+	<div class="game">
+		<div class="fields">
+			<canvas id="canvas-1"></canvas>
+			<canvas id="canvas-2"></canvas>
+			
+			<div class="text">
+				<p>Вxод в яму обозначается арабскими цифрами (1, 2, 3 и 4)<br>
+				   Выxод из ямы обозначается римскими цифрами (I, II, III и IV)
+				</p>
+
+				<p><b>Основные клетки</b></p>
+				<ul>
+					<li><b>Арбалет:</b> противник за свой ход может совершить +1 действие, срабатывает один раз, действие длится до конца игры.</li>
+					<li><b>Костыль:</b> начиная со следующего хода, можно совершать за ход на 1 действие больше, срабатывает один раз, действие длится до конца игры.</li>
+					<br>Действия костыля и арбалета складываются. Т.е., посещение обеих этих клеток дает тот же результат, что и непосещение ни одной из них. Если же Вы нашли костыль, а Ваш противник арбалет, то за ход Вы можете сделать уже три действия (не четыре!).
+					<li><b>Капкан:</b> пропуск трех ходов, срабатывает каждый раз при посещении.</li>
+					<li><b>Яма:</b> мгновенное перемещение на клетку <i>Выход из ямы</i> соответственно. Координаты выхода не сообщаются. Если игрок попал на клетку <i>выход из ямы</i>, не падая в саму яму, ему сообщается об этом.</li>
+					<li><b>Клад:</b> <i>ложный</i> или <i>истинный</i> можно узнать только выйдя из лабиринта. Для выхода из лабиринта можно воспользоваться любым из выходов, которые имеются по одному с каждой стороны или пробить новый, воспользовавшись гранатой.</li>
+				</ul>
+				<p>Игроку, который в свой ход вышел из лабиринта, сообщается, что он вышел из лабиринта. Если при этом у него на руках клад, сообщается какой это клад: ложный или настоящий.
+
+				<p>Одновременно можно нести только один клад. При этом действия арбалета, костыля, капкана не отменяются. Бросать клад где вздумается нельзя, но можно менять один на другой. Брать клад не обязательно. Если оказавшись на клетке с кладом Вы решили его взять, об этом нужно сообщить противнику.</p>
+			</div>
+		</div>
+
+
+		<div class="icons">
+			<img src="icons/play.png" id="play-img">
+			<img src="icons/add.png" id="add-img">
+			<img src="icons/wall.png" id="wall-img">
+			<img src="icons/arbalet.png" id="arbalet-img">
+			<img src="icons/trap.png" id="trap-img">
+			<img src="icons/treasure.png" id="treasure-img">
+			<img src="icons/pit.png" id="pit-img">
+			<img src="icons/crutch.png" id="crutch-img">
+			<img src="icons/bag.png" id="bag-img">
+			
+			<img src="icons/play_hover.png" id="play-hover-img">
+			<img src="icons/add_hover.png" id="add-hover-img">
+			<img src="icons/wall_hover.png" id="wall-hover-img">
+			<img src="icons/arbalet_hover.png" id="arbalet-hover-img">
+			<img src="icons/treasure_hover.png" id="treasure-hover-img">
+			<img src="icons/trap_hover.png" id="trap-hover-img">
+			<img src="icons/pit_hover.png" id="pit-hover-img">
+			<img src="icons/crutch_hover.png" id="crutch-hover-img">
+			<img src="icons/bag_hover.png" id="bag-hover-img">
+		</div>
+	</div>
+
+	<script src="labirynth.js"></script>
+	<script>
+		const CELL_SIZE = 40 // размер клетки в пикселях
+		const N = 10 // высота лабиринта
+		const M = 10 // ширина лабиринта
+		const WIDTH = (CELL_SIZE * M + 100) // ширина картинки
+		const HEIGHT = (CELL_SIZE * N + 50) // высота картинки
+
+		function GetCanvas(id) {
+			let canvas = document.getElementById(id)
+			canvas.width = WIDTH
+			canvas.height = HEIGHT
+			return canvas
+		}
+
+		let canvas1 = GetCanvas("canvas-1")
+		let canvas2 = GetCanvas("canvas-2")
+		let labirynth1 = new Labirynth(canvas1, N, M, CELL_SIZE, false)
+		let labirynth2 = new Labirynth(canvas2, N, M, CELL_SIZE, true)
+		labirynth1.Draw()
+		labirynth2.Draw()
+
+		document.addEventListener("mousemove", function(e) {
+			if (e.toElement.tagName != "CANVAS") {
+				labirynth1.currentPoint = null
+			}
+		})
+	</script>
+</body>
+</html>
