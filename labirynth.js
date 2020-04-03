@@ -8,9 +8,9 @@ const BAG = "B" // ложный клад
 const TRAP = "K" // капкан
 const PIT = "P" // яма
 const CRUTCH = "C" // костыль
-const PITS = [ "1", "I", "2", "II", "3", "III", "4", "IV" ] // ямы
 
 const BAG_COUNT = 3 // количество ложных кладов
+const PIT_COUNT = 4 // количество ям
 
 function Labirynth(canvas, n, m, size, isSecondField, canRemove=false) {
     this.n = n // число строк лабиринта
@@ -82,6 +82,7 @@ Labirynth.prototype.InitTools = function() {
     }
 
     this.isPitStart = false
+    this.pitStartImage = document.getElementById("hole-img")
 }
 
 // инициализация стен лабиринта
@@ -297,8 +298,8 @@ Labirynth.prototype.DrawObjects = function() {
                 let id = this.toolsObjects[i][j].id
                 this.ctx.font = (this.size / 3) + "px serif"
                 this.ctx.textAlign = "right"
-                this.ctx.fillText(PITS[id], x + this.size - 2, y + this.size - 8)
-                this.ctx.drawImage(this.toolsImages[i][0], x + 2, y + 2, this.size - 8, this.size - 8)
+                this.ctx.fillText(Math.floor(id / 2) + 1, x + this.size - 2, y + this.size - 8)
+                this.ctx.drawImage(id % 2 ? this.toolsImages[i][0] : this.pitStartImage, x + 2, y + 2, this.size - 8, this.size - 8)
             }
             else {
                 this.ctx.drawImage(this.toolsImages[i][0], x + 2, y + 2, this.size - 4, this.size - 4)
@@ -354,9 +355,9 @@ Labirynth.prototype.RemovePit = function(j) {
     let i = this.toolsIndexes[PIT]
 
     if (j % 2)
-        j--;
+        j--
 
-    this.toolsObjects[i].splice(j, 2);
+    this.toolsObjects[i].splice(j, 2)
 
     for (let j = 0; j < this.toolsObjects[i].length; j++)
         this.toolsObjects[i][j].id = j
@@ -371,7 +372,7 @@ Labirynth.prototype.RemoveTool = function(x, y) {
                     this.RemovePit(j)
                 }
                 else {
-                    this.toolsObjects[i].splice(j, 1);
+                    this.toolsObjects[i].splice(j, 1)
                 }
                 return
             }
@@ -413,7 +414,7 @@ Labirynth.prototype.IsMouseInControls = function(mx, my) {
 
 // проверка возможности использования инструмента
 Labirynth.prototype.CanUseTool = function(index) {
-    if (this.tools[index] == PIT && this.toolsObjects[index].length == PITS.length) // если хотим выбрать дыру, а они уже все есть
+    if (this.tools[index] == PIT && this.toolsObjects[index].length == PIT_COUNT * 2) // если хотим выбрать дыру, а они уже все есть
         return false
 
     if (this.tools[index] != PIT && this.isPitStart)
@@ -485,8 +486,14 @@ Labirynth.prototype.OtherToolMouseMove = function(ix, iy) {
 
     let x = this.x0 + ix * this.size
     let y = this.y0 + iy * this.size
+    let img;
 
-    this.ctx.drawImage(this.toolsImages[this.toolIndex][0], x + 2, y + 2, this.size - 4, this.size - 4)
+    if (this.tools[this.toolIndex] == PIT && !this.isPitStart)
+        img = this.pitStartImage
+    else
+        img = this.toolsImages[this.toolIndex][0]
+
+    this.ctx.drawImage(img, x + 2, y + 2, this.size - 4, this.size - 4)
 }
 
 // обработка перемещения мыши внутри лабиринта
@@ -592,6 +599,9 @@ Labirynth.prototype.PlayToolMakeMove = function(ix, iy) {
 
     this.path.push({ x: ix, y: iy })
 
+    if (!this.isSecondField) // не удаляем стены на первом поле
+        return
+
     if (ix - lastX == 0) {
         this.SetWallState(ix + 0.5, (iy + lastY + 1) / 2, true); // удаляем вертикальную стену
     }
@@ -609,8 +619,8 @@ Labirynth.prototype.PlayToolMouseClick = function(ix, iy, button) {
 
     for (let i = this.path.length - 1; i >= 0; i--)
         if (this.path[i].x == ix && this.path[i].y == iy) {
-            this.path.splice(i, 1);
-            return;
+            this.path.splice(i, 1)
+            return
         }
 }
 
@@ -755,7 +765,7 @@ Labirynth.prototype.KeyDown = function(e) {
         if (!this.IsCellEmpty(this.currentPoint.x, this.currentPoint.y)) // если клетка уже занята
             return // то выходим
 
-        if (key >= PITS.length) // если такой ямы нет
+        if (key >= PIT_COUNT * 2) // если такой ямы нет
             return // выходим
 
         let pit = this.toolsIndexes[PIT]
@@ -776,7 +786,7 @@ Labirynth.prototype.MouseWheel = function(e) {
 
     do {
         this.toolIndex = (this.toolIndex + this.tools.length + direction) % this.tools.length
-    } while (!this.CanUseTool(this.toolIndex));
+    } while (!this.CanUseTool(this.toolIndex))
 
     this.MouseMove(e)
     e.preventDefault()
