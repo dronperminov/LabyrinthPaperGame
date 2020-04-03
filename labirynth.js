@@ -1,5 +1,6 @@
 const PLAY = "PLAY"
 const ADD = "ADD"
+const REMOVE = "REMOVE"
 const WALL = "-" // стена
 const ARBALET = "A" // арбалет
 const TREASURE = "x" // клад
@@ -41,7 +42,14 @@ Labirynth.prototype.InitTools = function() {
     this.tools = [ PLAY, WALL, ARBALET, TREASURE, BAG, TRAP, CRUTCH, PIT ] // набор инструментов
     this.toolsIndexes = []
     this.toolsObjects = []
-    this.toolIndex = 1
+    this.toolIndex = 0
+
+    if (this.isSecondField) {
+        this.tools.splice(1, 0, ADD)
+
+        if (this.canRemove)
+            this.tools.splice(2, 0, REMOVE)
+    }
 
     for (let i = 0; i < this.tools.length; i++) {
         this.toolsObjects[i] = []
@@ -63,6 +71,13 @@ Labirynth.prototype.InitTools = function() {
     this.toolsImages.push([document.getElementById("trap-img"), document.getElementById("trap-hover-img")])
     this.toolsImages.push([document.getElementById("crutch-img"), document.getElementById("crutch-hover-img")])
     this.toolsImages.push([document.getElementById("pit-img"), document.getElementById("pit-hover-img")])
+
+    if (this.isSecondField) {
+        this.toolsImages.splice(1, 0, [document.getElementById("add-img"), document.getElementById("add-hover-img")])
+
+        if (this.canRemove)
+            this.toolsImages.splice(2, 0, [document.getElementById("remove-img"), document.getElementById("remove-hover-img")])
+    }
 
     this.isPitStart = false
 }
@@ -408,6 +423,9 @@ Labirynth.prototype.CanUseTool = function(index) {
     if (this.tools[index] == PIT && this.isSecondField)
         return false
 
+    if (this.tools[index] == ADD || this.tools[index] == REMOVE)
+        return false
+
     return true
 }
 
@@ -491,10 +509,17 @@ Labirynth.prototype.MazeMouseMove = function(mx, my) {
 Labirynth.prototype.ControlsMouseMove = function(mx, my) {
     let index = Math.floor((my - this.cy0) / this.cw)
 
+    if (this.tools[index] == ADD || this.tools[index] == REMOVE) {
+        this.canvas.style.cursor = "pointer"
+        this.ctx.drawImage(this.toolsImages[index][1], this.cx0 + 2, this.cy0 + index * this.cw + 2, this.cw - 4, this.cw - 4)
+        return
+    }
+
     if (index == this.toolIndex || !this.CanUseTool(index))
         return
 
-    this.ctx.drawImage(this.toolsImages[index][0], this.cx0 + 2, this.cy0 + index * this.cw + 2, this.cw - 4, this.cw - 4)
+    this.ctx.drawImage(this.toolsImages[index][1], this.cx0 + 2, this.cy0 + index * this.cw + 2, this.cw - 4, this.cw - 4)
+    this.canvas.style.cursor = "pointer"
 }
 
 // работа инструмента "СТЕНА"
@@ -645,8 +670,17 @@ Labirynth.prototype.MazeMouseClick = function(mx, my, btn) {
 Labirynth.prototype.ControlsMouseClick = function(mx, my) {
     let index = Math.floor((my - this.cy0) / this.cw)
 
-    if (this.CanUseTool(index))
+    if (this.CanUseTool(index)) {
         this.toolIndex = index
+    }
+    else if (this.tools[index] == ADD) {
+        if (confirm("Вы точно хотите добавить новое поле?"))
+            this.AddNewLabirynth()
+    }
+    else if (this.tools[index] == REMOVE) {
+        if (confirm("Вы точно хотите удалить это поле (" + this.n + "x" + this.m + ")?"))
+            this.RemoveLabyrinth()
+    }
 }
 
 // перемещение мыши
@@ -655,6 +689,7 @@ Labirynth.prototype.MouseMove = function(e) {
     let y = e.offsetY
 
     this.currentPoint = null
+    this.canvas.style.cursor = "default"
     this.Draw()
 
     if (this.IsMouseInMaze(x, y, this.delta))
@@ -702,18 +737,6 @@ Labirynth.prototype.RemoveLabyrinth = function() {
 Labirynth.prototype.KeyDown = function(e) {
     if (this.tools[this.toolIndex] != PLAY || this.currentPoint == null)
         return
-
-    if (e.key == "+" || e.key == "=") {
-        if (confirm("Вы точно хотите добавить новое поле?"))
-            this.AddNewLabirynth()
-        return
-    }
-
-    if (e.key == "-" && this.canRemove) {
-        if (confirm("Вы точно хотите удалить это поле (" + this.n + "x" + this.m + ")?"))
-            this.RemoveLabyrinth()
-        return
-    }
 
     if (e.code == "Digit1" || e.code == "Digit2" || e.code == "Digit3" || e.code == "Digit4") {
         let key = (+e.code.substr(5) - 1) * 2
