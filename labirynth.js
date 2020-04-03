@@ -559,7 +559,7 @@ Labirynth.prototype.PlayToolMouseMove = function(ix, iy) {
     this.ctx.stroke()
     this.currentPoint = { x: ix, y: iy }
 
-    this.ctx.clearRect(this.cx0, this.cy0 + this.h - this.size, this.size, this.size)
+    this.ctx.clearRect(this.cx0, this.cy0 + this.h - this.size + 1, this.size, this.size)
     this.ctx.font = (this.size / 2) + "px serif"
     this.ctx.fillStyle = "#000"
     this.ctx.textAlign = "center"
