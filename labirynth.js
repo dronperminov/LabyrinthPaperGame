@@ -652,9 +652,6 @@ Labirynth.prototype.ObjectsProcessing = function(ix, iy) {
         return
 
     for (let i = 0; i < this.tools.length; i++) {
-        if (this.tools[i] == PIT || this.tools[i] == ADD || this.tools[i] == REMOVE || this.toolsObjects[i].length == 0)
-            continue
-
         let objects = this.toolsObjects[i]
 
         for (let j = 0; j < objects.length; j++) {
@@ -672,6 +669,9 @@ Labirynth.prototype.ObjectsProcessing = function(ix, iy) {
                 }
                 else if (this.tools[i] == TRAP) {
                     message = "Вы попали в капкан"
+                }
+                else if (this.tools[i] == PIT && objects[j].id % 2) {
+                    message = "Вы попали на выход ямы №" + Math.floor(objects[j].id / 2 + 1)
                 }
 
                 this.MakeMessage(message)
@@ -865,6 +865,7 @@ Labirynth.prototype.HaveWall = function(x, y, dx, dy) {
     return index > -1 && !this.walls[index].isCleared
 }
 
+// отображение сообщения
 Labirynth.prototype.MakeMessage = function(msg) {
     this.message = msg
     this.Draw()
@@ -874,7 +875,7 @@ Labirynth.prototype.MakeMessage = function(msg) {
         labyrinth.message = ""
         labyrinth.Draw()
         labyrinth.MouseMove({ offsetX: 0, offsetY: 0 })
-    }, 750)
+    }, 1000)
 }
 
 // ыполнение хода стрелками
