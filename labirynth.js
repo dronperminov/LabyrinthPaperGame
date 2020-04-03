@@ -340,6 +340,16 @@ Labirynth.prototype.DrawPath = function() {
             this.ctx.fillText("✖", x + this.size / 2, y + this.size / 2)
         }
     }
+
+    if (n > 0) {
+        let x = this.path[n - 1].x
+        let y = this.path[n - 1].y
+
+        this.ctx.font = (this.size / 2) + "px serif"
+        this.ctx.fillStyle = "#f00"
+        this.ctx.textAlign = "center"
+        this.ctx.fillText(this.letters[x] + (y + 1), this.cx0 + this.cw / 2, this.cy0 + this.h - this.size / 2)
+    }
 }
 
 // отрисовка сообщения
@@ -486,6 +496,7 @@ Labirynth.prototype.PlayToolMouseMove = function(ix, iy) {
     this.ctx.stroke()
     this.currentPoint = { x: ix, y: iy }
 
+    this.ctx.clearRect(this.cx0, this.cy0 + this.h - this.size, this.size, this.size)
     this.ctx.font = (this.size / 2) + "px serif"
     this.ctx.fillStyle = "#000"
     this.ctx.textAlign = "center"
