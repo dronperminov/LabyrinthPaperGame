@@ -727,7 +727,7 @@ Labirynth.prototype.AddNewLabirynth = function() {
 
 // удаление лабиринта
 Labirynth.prototype.RemoveLabyrinth = function() {
-    document.body.removeChild(document.body.lastChild)
+    document.body.removeChild(this.canvas)
     this.MouseDown = function(e) {}
     this.MouseMove = function(e) {}
     this.KeyDown = function(e) {}
