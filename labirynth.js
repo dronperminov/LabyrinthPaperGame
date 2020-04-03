@@ -523,12 +523,54 @@ Labirynth.prototype.WallToolMouseClick = function(mx, my, button) {
     }
 }
 
+// очистка стены в заданной точке поля
+Labirynth.prototype.ClearWall = function(ix, iy) {
+    let mx = this.x0 + ix * this.size
+    let my = this.y0 + iy * this.size
+    let wall = this.GetWallByPoint(mx, my)
+
+    if (wall == null)
+        return
+
+    let index = this.GetWallIndex(wall)
+
+    if (index > -1) {
+        this.walls[index].isCleared = true
+    }
+    else {
+        wall.isCleared = true
+        this.walls.push(wall)
+    }
+}
+
+// выполнение хода
+Labirynth.prototype.PlayToolMakeMove = function(ix, iy) {
+    if (this.path.length == 0) {
+        this.path.push({ x: ix, y: iy })
+        return
+    }
+
+    let last = this.path.length - 1
+    let lastX = this.path[last].x
+    let lastY = this.path[last].y
+
+    if (ix == lastX && iy == lastY) // если ставим в ту же точку
+        return // то ничего не меняем
+
+    this.path.push({ x: ix, y: iy })
+
+    if (ix - lastX == 0) {
+        this.ClearWall(ix + 0.5, (iy + lastY + 1) / 2); // удаляем вертикальную стену
+    }
+    else if (iy - lastY == 0) {
+        this.ClearWall((ix + lastX + 1) / 2, iy + 0.5); // удаляем горизонтальную стену
+    }
+}
+
 // работа инструмента "ИГРА"
 Labirynth.prototype.PlayToolMouseClick = function(ix, iy, button) {
     if (button == 0) {
-        if (this.path.length == 0 || this.path[this.path.length - 1].x != ix || this.path[this.path.length - 1].y != iy)
-            this.path.push({ x: ix, y: iy })
-
+        this.PlayToolMakeMove(ix, iy)
         return
     }
 
