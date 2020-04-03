@@ -475,10 +475,11 @@ Labirynth.prototype.PlayToolMouseMove = function(ix, iy) {
     let x = this.x0 + ix * this.size
     let y = this.y0 + iy * this.size
 
+    this.canvas.style.cursor = "pointer"
     this.ctx.beginPath()
     this.ctx.arc(x + this.size / 2, y + this.size / 2, this.size / 4, 0, Math.PI * 2)
-    this.ctx.fillStyle = "#f00"
-    this.ctx.fill()
+    this.ctx.strokeStyle = "#f00"
+    this.ctx.stroke()
     this.currentPoint = { x: ix, y: iy }
 
     this.ctx.font = (this.size / 2) + "px serif"
@@ -602,9 +603,11 @@ Labirynth.prototype.PitProcessingFirstField = function(ix, iy) {
 
             this.path.push({x: ix, y: iy })
             this.MakeMessage("Вы попали в яму №" + (Math.floor(pits[i].id / 2) + 1))
-            return
+            return true
         }
     }
+
+    return false
 }
 
 // обработка ямы на втором поле
@@ -620,7 +623,7 @@ Labirynth.prototype.PitProcessingSecondField = function(ix, iy) {
     }
 
     if (id == -1)
-        return
+        return false
 
     for (let i = 0; i < pits.length; i++) {
         if (pits[i].id == id + 1) {
@@ -630,15 +633,51 @@ Labirynth.prototype.PitProcessingSecondField = function(ix, iy) {
             this.path.push({x: ix, y: iy })
         }
     }
+
+    return true
 }
 
-// обработка ям
-Labirynth.prototype.PitProcessing = function(ix, iy) {
+// обработка объектов
+Labirynth.prototype.ObjectsProcessing = function(ix, iy) {
+    let isPit;
+
     if (this.isSecondField) {
-        this.PitProcessingSecondField(ix, iy)
+        isPit = this.PitProcessingSecondField(ix, iy)
     }
     else {
-        this.PitProcessingFirstField(ix, iy)
+        isPit = this.PitProcessingFirstField(ix, iy)
+    }
+
+    if (isPit)
+        return
+
+    for (let i = 0; i < this.tools.length; i++) {
+        if (this.tools[i] == PIT || this.tools[i] == ADD || this.tools[i] == REMOVE || this.toolsObjects[i].length == 0)
+            continue
+
+        let objects = this.toolsObjects[i]
+
+        for (let j = 0; j < objects.length; j++) {
+            if (objects[j].x == ix && objects[j].y == iy) {
+                let message = ""
+
+                if (this.tools[i] == BAG || this.tools[i] == TREASURE) {
+                    message = "Вы нашли клад"
+                }
+                else if (this.tools[i] == ARBALET) {
+                    message = "Вы наткнулись на арбалет"
+                }
+                else if (this.tools[i] == CRUTCH) {
+                    message = "Вы нашли костыль"
+                }
+                else if (this.tools[i] == TRAP) {
+                    message = "Вы попали в капкан"
+                }
+
+                this.MakeMessage(message)
+                return
+            }
+        }
     }
 }
 
@@ -646,7 +685,7 @@ Labirynth.prototype.PitProcessing = function(ix, iy) {
 Labirynth.prototype.PlayToolMakeMove = function(ix, iy) {
     if (this.path.length == 0) {
         this.path.push({ x: ix, y: iy })
-        this.PitProcessing(ix, iy)
+        this.ObjectsProcessing(ix, iy)
         return
     }
 
@@ -658,7 +697,7 @@ Labirynth.prototype.PlayToolMakeMove = function(ix, iy) {
         return // то ничего не меняем
 
     this.path.push({ x: ix, y: iy })
-    this.PitProcessing(ix, iy)
+    this.ObjectsProcessing(ix, iy)
 
     if (!this.isSecondField) // не удаляем стены на первом поле
         return
