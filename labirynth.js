@@ -73,8 +73,8 @@ Labirynth.prototype.InitTools = function() {
     this.toolsImages.push([document.getElementById("play-img"), document.getElementById("play-hover-img")])
     this.toolsImages.push([document.getElementById("wall-img"), document.getElementById("wall-hover-img")])
     this.toolsImages.push([document.getElementById("arbalet-img"), document.getElementById("arbalet-hover-img")])
-    this.toolsImages.push([document.getElementById("treasure-img"), document.getElementById("treasure-hover-img")])
-    this.toolsImages.push([document.getElementById("bag-img"), document.getElementById("bag-hover-img")])
+    this.toolsImages.push([document.getElementById("treasure-img"), document.getElementById("treasure-hover-img"), document.getElementById("treasure-removed-img")])
+    this.toolsImages.push([document.getElementById("bag-img"), document.getElementById("bag-hover-img"), document.getElementById("bag-removed-img")])
     this.toolsImages.push([document.getElementById("trap-img"), document.getElementById("trap-hover-img")])
     this.toolsImages.push([document.getElementById("crutch-img"), document.getElementById("crutch-hover-img")])
     this.toolsImages.push([document.getElementById("pit-img"), document.getElementById("pit-hover-img")])
@@ -306,8 +306,8 @@ Labirynth.prototype.DrawObjects = function() {
                 this.ctx.drawImage(id % 2 ? this.toolsImages[i][0] : this.pitStartImage, x + 2, y + 2, this.size - 8, this.size - 8)
             }
             else if (this.tools[i] == BAG || this.tools[i] == TREASURE) {
-                let imgId = this.toolsObjects[i][j].isActivated ? 1 : 0
-                this.ctx.drawImage(this.toolsImages[i][imgId], x + 2, y + 2, this.size - 4, this.size - 4)
+                let status = this.toolsObjects[i][j].status
+                this.ctx.drawImage(this.toolsImages[i][status], x + 2, y + 2, this.size - 4, this.size - 4)
             }
             else {
                 this.ctx.drawImage(this.toolsImages[i][0], x + 2, y + 2, this.size - 4, this.size - 4)
@@ -406,21 +406,40 @@ Labirynth.prototype.RemoveTool = function(x, y) {
     }
 }
 
+Labirynth.prototype.HaveActivatedTreasure = function() {
+    let treasures = this.toolsObjects[this.toolsIndexes[TREASURE]]
+
+    for (let i = 0; i < treasures.length; i++)
+        if (treasures[i].status == 1)
+            return true
+
+    let bags = this.toolsObjects[this.toolsIndexes[BAG]]
+
+    for (let i = 0; i < bags.length; i++)
+        if (bags[i].status == 1)
+            return true
+
+    return false
+}
+
 // активация / деактивация клада
 Labirynth.prototype.ActivateTreasure = function(ix, iy) {
     let treasures = this.toolsObjects[this.toolsIndexes[TREASURE]]
     let bags = this.toolsObjects[this.toolsIndexes[BAG]]
+    let haveActivated = this.HaveActivatedTreasure()
 
     for (let i = 0; i < treasures.length; i++) {
         if (treasures[i].x == ix && treasures[i].y == iy) {
-            treasures[i].isActivated = !treasures[i].isActivated;
+            if (!haveActivated || treasures[i].status != 0)
+                treasures[i].status = (treasures[i].status + 1) % 3;
             return
         }
     }
 
     for (let i = 0; i < bags.length; i++) {
         if (bags[i].x == ix && bags[i].y == iy) {
-            bags[i].isActivated = !bags[i].isActivated;
+            if (!haveActivated || bags[i].status != 0)
+                bags[i].status = (bags[i].status + 1) % 3;
             return
         }
     }
@@ -795,7 +814,7 @@ Labirynth.prototype.OtherToolMouseClick = function(ix, iy, button) {
             return
 
     if (this.tools[this.toolIndex] == TREASURE || this.tools[this.toolIndex] == BAG)
-        this.toolsObjects[this.toolIndex].push({ x: ix, y: iy, isActivated: false })
+        this.toolsObjects[this.toolIndex].push({ x: ix, y: iy, status: 0 })
     else
         this.toolsObjects[this.toolIndex].push({ x: ix, y: iy })
 }
