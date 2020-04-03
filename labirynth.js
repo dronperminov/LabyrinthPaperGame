@@ -305,6 +305,10 @@ Labirynth.prototype.DrawObjects = function() {
                 this.ctx.fillText(Math.floor(id / 2) + 1, x + this.size - 2, y + this.size - 8)
                 this.ctx.drawImage(id % 2 ? this.toolsImages[i][0] : this.pitStartImage, x + 2, y + 2, this.size - 8, this.size - 8)
             }
+            else if (this.tools[i] == BAG || this.tools[i] == TREASURE) {
+                let imgId = this.toolsObjects[i][j].isActivated ? 1 : 0
+                this.ctx.drawImage(this.toolsImages[i][imgId], x + 2, y + 2, this.size - 4, this.size - 4)
+            }
             else {
                 this.ctx.drawImage(this.toolsImages[i][0], x + 2, y + 2, this.size - 4, this.size - 4)
             }
@@ -398,6 +402,26 @@ Labirynth.prototype.RemoveTool = function(x, y) {
                 }
                 return
             }
+        }
+    }
+}
+
+// активация / деактивация клада
+Labirynth.prototype.ActivateTreasure = function(ix, iy) {
+    let treasures = this.toolsObjects[this.toolsIndexes[TREASURE]]
+    let bags = this.toolsObjects[this.toolsIndexes[BAG]]
+
+    for (let i = 0; i < treasures.length; i++) {
+        if (treasures[i].x == ix && treasures[i].y == iy) {
+            treasures[i].isActivated = !treasures[i].isActivated;
+            return
+        }
+    }
+
+    for (let i = 0; i < bags.length; i++) {
+        if (bags[i].x == ix && bags[i].y == iy) {
+            bags[i].isActivated = !bags[i].isActivated;
+            return
         }
     }
 }
@@ -566,8 +590,12 @@ Labirynth.prototype.WallToolMouseClick = function(mx, my, button) {
         let ix = Math.floor((mx - this.x0) / this.size)
         let iy = Math.floor((my - this.y0) / this.size)
 
-        if (button == 2)
+        if (button == 2) {
             this.RemoveTool(ix, iy)
+        }
+        else {
+            this.ActivateTreasure(ix, iy)
+        }
         return
     }
 
@@ -766,7 +794,10 @@ Labirynth.prototype.OtherToolMouseClick = function(ix, iy, button) {
     if (!this.IsCellEmpty(ix, iy))
             return
 
-    this.toolsObjects[this.toolIndex].push({ x: ix, y: iy })
+    if (this.tools[this.toolIndex] == TREASURE || this.tools[this.toolIndex] == BAG)
+        this.toolsObjects[this.toolIndex].push({ x: ix, y: iy, isActivated: false })
+    else
+        this.toolsObjects[this.toolIndex].push({ x: ix, y: iy })
 }
 
 // клик мыши по клетки лабиринта
