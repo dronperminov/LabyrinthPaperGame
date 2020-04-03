@@ -37,6 +37,7 @@ function Labirynth(canvas, n, m, size, isSecondField, canRemove=false) {
 
     this.path = []
     this.currentPoint = null
+    this.message = ""
 }
 
 // инициализация инструменов
@@ -337,6 +338,13 @@ Labirynth.prototype.DrawPath = function() {
     }
 }
 
+// отрисовка сообщения
+Labirynth.prototype.DrawMessage = function() {
+    this.ctx.fillStyle = "#f00"
+    this.ctx.font = (this.size / 3) + "px serif"
+    this.ctx.fillText(this.message, this.canvas.width / 2, this.y0 + this.h + 10)
+}
+
 // отрисовка лабиринта
 Labirynth.prototype.Draw = function() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
@@ -347,6 +355,7 @@ Labirynth.prototype.Draw = function() {
     this.DrawObjects()
     this.DrawControls()
     this.DrawPath()
+    this.DrawMessage()
 }
 
 // удаление дыры
@@ -592,6 +601,7 @@ Labirynth.prototype.PitProcessingFirstField = function(ix, iy) {
             iy = pits[i + 1].y
 
             this.path.push({x: ix, y: iy })
+            this.MakeMessage("Вы попали в яму №" + (Math.floor(pits[i].id / 2) + 1))
             return
         }
     }
@@ -816,6 +826,18 @@ Labirynth.prototype.HaveWall = function(x, y, dx, dy) {
     return index > -1 && !this.walls[index].isCleared
 }
 
+Labirynth.prototype.MakeMessage = function(msg) {
+    this.message = msg
+    this.Draw()
+    let labyrinth = this
+
+    setTimeout(function() {
+        labyrinth.message = ""
+        labyrinth.Draw()
+        labyrinth.MouseMove({ offsetX: 0, offsetY: 0 })
+    }, 750)
+}
+
 // ыполнение хода стрелками
 Labirynth.prototype.MakeMove = function(direction) {
     if (this.path.length == 0)
@@ -849,14 +871,14 @@ Labirynth.prototype.MakeMove = function(direction) {
 
     if (x + dx < 0 || x + dx >= this.m || y + dy < 0 || y + dy >= this.n) {
         if (haveWall)
-            alert(name + " нельзя, граница лабиринта!")
+            this.MakeMessage(name + " нельзя, граница лабиринта!")
         else
-            alert(name + " можно, это выход из лабиринта!")
+            this.MakeMessage(name + " можно, это выход из лабиринта!")
         return
     }
 
     if (haveWall) {
-        alert(name + " нельзя, там стена!")
+        this.MakeMessage(name + " нельзя, там стена!")
         return
     }
 
