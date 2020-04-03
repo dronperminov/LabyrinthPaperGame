@@ -10,6 +10,8 @@ const PIT = "P" // яма
 const CRUTCH = "C" // костыль
 const PITS = [ "1", "I", "2", "II", "3", "III", "4", "IV" ] // ямы
 
+const BAG_COUNT = 3 // количество ложных кладов
+
 function Labirynth(canvas, n, m, size, isSecondField, canRemove=false) {
     this.n = n // число строк лабиринта
     this.m = m // число столбцов лабиринта
@@ -411,11 +413,14 @@ Labirynth.prototype.IsMouseInControls = function(mx, my) {
 
 // проверка возможности использования инструмента
 Labirynth.prototype.CanUseTool = function(index) {
-    if (this.tools[index] == PIT && this.toolsObjects[index].length == 8) // если хотим выбрать дыру, а они уже все есть
+    if (this.tools[index] == PIT && this.toolsObjects[index].length == PITS.length) // если хотим выбрать дыру, а они уже все есть
         return false
 
     if (this.tools[index] != PIT && this.isPitStart)
         return false // не даём менять управление, если не поставили вторую дыру
+
+    if (this.tools[index] == BAG && this.toolsObjects[index].length < BAG_COUNT)
+        return true
 
     if (this.tools[index] != PIT && this.toolsObjects[index].length > 0)
         return false
@@ -738,7 +743,7 @@ Labirynth.prototype.KeyDown = function(e) {
     if (this.tools[this.toolIndex] != PLAY || this.currentPoint == null)
         return
 
-    if (e.code == "Digit1" || e.code == "Digit2" || e.code == "Digit3" || e.code == "Digit4") {
+    if (e.code.substr(0, 5) == "Digit") {
         let key = (+e.code.substr(5) - 1) * 2
 
         if (e.shiftKey)
@@ -746,6 +751,9 @@ Labirynth.prototype.KeyDown = function(e) {
 
         if (!this.IsCellEmpty(this.currentPoint.x, this.currentPoint.y)) // если клетка уже занята
             return // то выходим
+
+        if (key >= PITS.length) // если такой ямы нет
+            return // выходим
 
         let pit = this.toolsIndexes[PIT]
 
