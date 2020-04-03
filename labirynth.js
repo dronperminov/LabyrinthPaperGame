@@ -345,6 +345,7 @@ Labirynth.prototype.RemovePit = function(j) {
         this.toolsObjects[i][j].id = j
 }
 
+// удаление объекта интсрумента
 Labirynth.prototype.RemoveTool = function(x, y) {
     for (let i = 0; i < this.toolsObjects.length; i++) {
         for (let j = 0; j < this.toolsObjects[i].length; j++) {
@@ -419,7 +420,7 @@ Labirynth.prototype.GetWallIndex = function(wall) {
     return -1
 }
 
-// обработка перемещения мыши во время стены
+// обработка перемещения мыши во время режима "WALL"
 Labirynth.prototype.WallToolMouseMove = function(mx, my) {
     let wall = this.GetWallByPoint(mx, my)
 
@@ -437,6 +438,7 @@ Labirynth.prototype.WallToolMouseMove = function(mx, my) {
     this.ctx.lineWidth = 1
 }
 
+// обработка перемещения мыши в режиме "PLAY"
 Labirynth.prototype.PlayToolMouseMove = function(ix, iy) {
     let x = this.x0 + ix * this.size
     let y = this.y0 + iy * this.size
@@ -453,6 +455,7 @@ Labirynth.prototype.PlayToolMouseMove = function(ix, iy) {
     this.ctx.fillText(this.letters[ix] + (iy + 1), this.cx0 + this.cw / 2, this.cy0 + this.h - this.size / 2)
 }
 
+// обработка перемещения мыши в остальных режимах
 Labirynth.prototype.OtherToolMouseMove = function(ix, iy) {
     if (!this.IsCellEmpty(ix, iy))
             return
@@ -687,6 +690,7 @@ Labirynth.prototype.AddNewLabirynth = function() {
     labyrinth.Draw()
 }
 
+// удаление лабиринта
 Labirynth.prototype.RemoveLabyrinth = function() {
     document.body.removeChild(document.body.lastChild)
     this.MouseDown = function(e) {}
@@ -694,6 +698,7 @@ Labirynth.prototype.RemoveLabyrinth = function() {
     this.KeyDown = function(e) {}
 }
 
+// обработка нажатия клавиши
 Labirynth.prototype.KeyDown = function(e) {
     if (this.tools[this.toolIndex] != PLAY || this.currentPoint == null)
         return
@@ -731,6 +736,7 @@ Labirynth.prototype.KeyDown = function(e) {
     this.Draw()
 }
 
+// обработка прокрутки колеса мыши
 Labirynth.prototype.MouseWheel = function(e) {
     let direction = e.deltaY > 0 ? 1 : -1
 
