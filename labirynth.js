@@ -890,19 +890,19 @@ Labirynth.prototype.MakeMove = function(direction) {
     let dy = 0
     let name = "";
 
-    if (direction == "Up") {
+    if (direction == "ArrowUp" || direction == "KeyW") {
         dy = -1
         name = "Вверх"
     }
-    else if (direction == "Down") {
+    else if (direction == "ArrowDown" || direction == "KeyS") {
         dy = 1
         name = "Вниз"
     }
-    else if (direction == "Left") {
+    else if (direction == "ArrowLeft" || direction == "KeyA") {
         dx = -1
         name = "Влево"
     }
-    else if (direction == "Right") {
+    else if (direction == "ArrowRight" || direction == "KeyD") {
         dx = 1
         name = "Вправо"
     }
@@ -929,8 +929,8 @@ Labirynth.prototype.MakeMove = function(direction) {
 // обработка нажатия клавиши
 Labirynth.prototype.KeyDown = function(e) {
     if (!this.isSecondField) {
-        if (e.key.substr(0, 5) == "Arrow") {
-            this.MakeMove(e.key.substr(5))
+        if (["ArrowLeft", "ArrowDown", "ArrowUp", "ArrowRight", "KeyA", "KeyS", "KeyW", "KeyD"].indexOf(e.code) > -1) {
+            this.MakeMove(e.code)
             e.preventDefault()
         }
 
