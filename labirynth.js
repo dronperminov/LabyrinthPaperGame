@@ -524,7 +524,7 @@ Labirynth.prototype.WallToolMouseClick = function(mx, my, button) {
 }
 
 // очистка стены в заданной точке поля
-Labirynth.prototype.ClearWall = function(ix, iy) {
+Labirynth.prototype.SetWallState = function(ix, iy, isCleared) {
     let mx = this.x0 + ix * this.size
     let my = this.y0 + iy * this.size
     let wall = this.GetWallByPoint(mx, my)
@@ -535,10 +535,10 @@ Labirynth.prototype.ClearWall = function(ix, iy) {
     let index = this.GetWallIndex(wall)
 
     if (index > -1) {
-        this.walls[index].isCleared = true
+        this.walls[index].isCleared = isCleared
     }
     else {
-        wall.isCleared = true
+        wall.isCleared = isCleared
         this.walls.push(wall)
     }
 }
@@ -560,10 +560,10 @@ Labirynth.prototype.PlayToolMakeMove = function(ix, iy) {
     this.path.push({ x: ix, y: iy })
 
     if (ix - lastX == 0) {
-        this.ClearWall(ix + 0.5, (iy + lastY + 1) / 2); // удаляем вертикальную стену
+        this.SetWallState(ix + 0.5, (iy + lastY + 1) / 2, true); // удаляем вертикальную стену
     }
     else if (iy - lastY == 0) {
-        this.ClearWall((ix + lastX + 1) / 2, iy + 0.5); // удаляем горизонтальную стену
+        this.SetWallState((ix + lastX + 1) / 2, iy + 0.5, true); // удаляем горизонтальную стену
     }
 }
 
