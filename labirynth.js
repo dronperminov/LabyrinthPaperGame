@@ -110,8 +110,7 @@ Labirynth.prototype.InitEvents = function() {
     this.canvas.addEventListener('mousedown', function(e) { labirynth.MouseDown(e) })
     this.canvas.addEventListener('mousewheel', function(e) { labirynth.MouseWheel(e) })
 
-    if (this.isSecondField)
-        window.addEventListener('keypress', function(e) { labirynth.KeyDown(e) })
+    window.addEventListener('keydown', function(e) { labirynth.KeyDown(e) })
 
     document.addEventListener("mousemove", function(e) {
         if (e.toElement != labirynth.canvas) {
@@ -751,8 +750,57 @@ Labirynth.prototype.RemoveLabyrinth = function() {
     this.KeyDown = function(e) {}
 }
 
+// проверка наличия стены для хода (x->x+dx, y->y+dy)
+Labirynth.prototype.HaveWall = function(x, y, dx, dy) {
+    let mx = this.x0 + (x + 0.5 + dx / 2) * this.size
+    let my = this.y0 + (y + 0.5 + dy / 2) * this.size
+
+    let wall = this.GetWallByPoint(mx, my)
+    return wall != null && this.GetWallIndex(wall) > -1
+}
+
+// ыполнение хода стрелками
+Labirynth.prototype.MakeMove = function(direction) {
+    if (this.path.length == 0)
+        return
+
+    let last = this.path.length - 1
+    let x = this.path[last].x
+    let y = this.path[last].y
+    let dx = 0
+    let dy = 0
+
+    if (direction == "Up" && y > 0) {
+        dy = -1
+    }
+    else if (direction == "Down" && y < this.n - 1) {
+        dy = 1
+    }
+    else if (direction == "Left" && x > 0) {
+        dx = -1
+    }
+    else if (direction == "Right" && x < this.m - 1) {
+        dx = 1
+    }
+
+    if (this.HaveWall(x, y, dx, dy))
+        return
+
+    this.PlayToolMakeMove(x + dx, y + dy)
+    this.Draw()
+}
+
 // обработка нажатия клавиши
 Labirynth.prototype.KeyDown = function(e) {
+    if (!this.isSecondField) {
+        if (e.key.substr(0, 5) == "Arrow") {
+            this.MakeMove(e.key.substr(5))
+            e.preventDefault()
+        }
+
+        return
+    }
+
     if (this.tools[this.toolIndex] != PLAY || this.currentPoint == null)
         return
 
