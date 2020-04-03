@@ -1,6 +1,7 @@
 const PLAY = "PLAY"
 const ADD = "ADD"
 const REMOVE = "REMOVE"
+const GRENADE = "GRENADE"
 const WALL = "-" // стена
 const ARBALET = "A" // арбалет
 const TREASURE = "x" // клад
@@ -11,6 +12,7 @@ const CRUTCH = "C" // костыль
 
 const BAG_COUNT = 3 // количество ложных кладов
 const PIT_COUNT = 4 // количество ям
+const GRENADE_COUNT = 3 // количество гранат
 
 const BAD_COLOR = "#f00"
 const GOOD_COLOR = "#40bfbf"
@@ -46,7 +48,7 @@ function Labirynth(canvas, n, m, size, isSecondField, canRemove=false) {
 
 // инициализация инструменов
 Labirynth.prototype.InitTools = function() {
-    this.tools = [ PLAY, WALL, ARBALET, TREASURE, BAG, TRAP, CRUTCH, PIT ] // набор инструментов
+    this.tools = [ PLAY, WALL, GRENADE, ARBALET, TREASURE, BAG, TRAP, CRUTCH, PIT ] // набор инструментов
     this.toolsIndexes = []
     this.toolsObjects = []
     this.toolIndex = 0
@@ -60,6 +62,11 @@ Labirynth.prototype.InitTools = function() {
 
     for (let i = 0; i < this.tools.length; i++) {
         this.toolsObjects[i] = []
+
+        if (this.tools[i] == GRENADE)
+            for (let j = 0; j < GRENADE_COUNT; j++)
+                this.toolsObjects[i].push(j)
+
         this.toolsIndexes[this.tools[i]] = i
     }
 
@@ -72,6 +79,7 @@ Labirynth.prototype.InitTools = function() {
     this.toolsImages = []
     this.toolsImages.push([document.getElementById("play-img"), document.getElementById("play-hover-img")])
     this.toolsImages.push([document.getElementById("wall-img"), document.getElementById("wall-hover-img")])
+    this.toolsImages.push([document.getElementById("grenade-img"), document.getElementById("grenade-hover-img")])
     this.toolsImages.push([document.getElementById("arbalet-img"), document.getElementById("arbalet-hover-img")])
     this.toolsImages.push([document.getElementById("treasure-img"), document.getElementById("treasure-hover-img"), document.getElementById("treasure-removed-img")])
     this.toolsImages.push([document.getElementById("bag-img"), document.getElementById("bag-hover-img"), document.getElementById("bag-removed-img")])
@@ -280,7 +288,16 @@ Labirynth.prototype.DrawControls = function() {
         y = this.cy0 + i * this.cw
 
         this.ctx.rect(x, y, this.cw, this.cw)
-        this.ctx.drawImage(this.toolsImages[i][i == this.toolIndex ? 1 : 0], x + 2, y + 2, this.cw - 4, this.cw - 4)
+
+        if (this.tools[i] == GRENADE) {
+            this.ctx.font = (this.size / 2.5) + "px serif"
+            this.ctx.textAlign = "right"
+            this.ctx.fillText(this.toolsObjects[i].length, x + this.cw - 2, y + this.cw - 8)
+            this.ctx.drawImage(this.toolsImages[i][i == this.toolIndex ? 1 : 0], x + 2, y + 2, this.cw - 8, this.cw - 8)
+        }
+        else {
+            this.ctx.drawImage(this.toolsImages[i][i == this.toolIndex ? 1 : 0], x + 2, y + 2, this.cw - 4, this.cw - 4)
+        }
     }
 
     this.ctx.strokeStyle = '#black'
@@ -488,6 +505,9 @@ Labirynth.prototype.CanUseTool = function(index) {
     if (this.tools[index] == BAG && this.toolsObjects[index].length < BAG_COUNT)
         return true
 
+    if (this.tools[index] == GRENADE)
+        return this.toolsObjects[index].length > 0
+
     if (this.tools[index] != PIT && this.toolsObjects[index].length > 0)
         return false
 
@@ -546,6 +566,37 @@ Labirynth.prototype.PlayToolMouseMove = function(ix, iy) {
     this.ctx.fillText(this.letters[ix] + (iy + 1), this.cx0 + this.cw / 2, this.cy0 + this.h - this.size / 2)
 }
 
+// обработка перемещения мыши в режиме "GRENADE"
+Labirynth.prototype.GrenadeToolMouseMove = function(mx, my) {
+    if (mx <= this.x0 + this.delta || mx >= this.x0 + this.w - this.delta)
+        return
+
+    if (my <= this.y0 + this.delta || my >= this.y0 + this.h - this.delta)
+        return
+
+    let wall = this.GetWallByPoint(mx, my)
+
+    if (wall == null)
+        return
+
+    let index = this.GetWallIndex(wall)
+
+    if (index == -1)
+        return
+
+    let points = this.GetWallPoints(wall)
+
+    let ix = wall.isHorizontal ? points.x1 : (points.x1 + points.x2 - 1) / 2
+    let iy = wall.isHorizontal ? (points.y1 + points.y2 - 1) / 2 : points.y1
+
+    let x = this.x0 + ix * this.size
+    let y = this.y0 + iy * this.size
+    let img = this.toolsImages[this.toolIndex][0]
+
+    this.ctx.drawImage(img, x + 2, y + 2, this.size - 4, this.size - 4)
+    this.canvas.style.cursor = "pointer"
+}
+
 // обработка перемещения мыши в остальных режимах
 Labirynth.prototype.OtherToolMouseMove = function(ix, iy) {
     if (!this.IsCellEmpty(ix, iy))
@@ -579,6 +630,9 @@ Labirynth.prototype.MazeMouseMove = function(mx, my) {
     if (this.tools[this.toolIndex] == PLAY) {
         this.PlayToolMouseMove(ix, iy)
     }
+    else if (this.tools[this.toolIndex] == GRENADE) {
+        this.GrenadeToolMouseMove(mx, my)
+    }
     else {
         this.OtherToolMouseMove(ix, iy)
     }
@@ -597,7 +651,13 @@ Labirynth.prototype.ControlsMouseMove = function(mx, my) {
     if (index == this.toolIndex || !this.CanUseTool(index))
         return
 
-    this.ctx.drawImage(this.toolsImages[index][1], this.cx0 + 2, this.cy0 + index * this.cw + 2, this.cw - 4, this.cw - 4)
+    if (this.tools[index] == GRENADE) {
+        this.ctx.drawImage(this.toolsImages[index][1], this.cx0 + 2, this.cy0 + index * this.cw + 2, this.cw - 8, this.cw - 8)
+    }
+    else {
+        this.ctx.drawImage(this.toolsImages[index][1], this.cx0 + 2, this.cy0 + index * this.cw + 2, this.cw - 4, this.cw - 4)
+    }
+
     this.canvas.style.cursor = "pointer"
 }
 
@@ -787,6 +847,28 @@ Labirynth.prototype.PlayToolMouseClick = function(ix, iy, button) {
         }
 }
 
+// работа инструмента "ГРАНАТА"
+Labirynth.prototype.GrenadeToolMouseClick = function(mx, my) {
+    if (mx <= this.x0 + this.delta || mx >= this.x0 + this.w - this.delta)
+        return
+
+    if (my <= this.y0 + this.delta || my >= this.y0 + this.h - this.delta)
+        return
+
+    let wall = this.GetWallByPoint(mx, my)
+
+    if (wall == null)
+        return
+
+    let index = this.GetWallIndex(wall)
+
+    if (index == -1)
+        return
+
+    this.walls[index].isCleared = true
+    this.toolsObjects[this.toolsIndexes[GRENADE]].pop()
+}
+
 // работа инструмента "ДЫРА"
 Labirynth.prototype.PitToolMouseClick = function(ix, iy, button) {
     if (!this.IsCellEmpty(ix, iy) || button != 0)
@@ -834,6 +916,9 @@ Labirynth.prototype.MazeMouseClick = function(mx, my, btn) {
 
     if (this.tools[this.toolIndex] == PLAY) {
         this.PlayToolMouseClick(ix, iy, btn)
+    }
+    else if (this.tools[this.toolIndex] == GRENADE) {
+        this.GrenadeToolMouseClick(mx, my)
     }
     else if (this.tools[this.toolIndex] == PIT) {
         this.PitToolMouseClick(ix, iy, btn)
