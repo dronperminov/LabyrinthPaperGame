@@ -12,6 +12,9 @@ const CRUTCH = "C" // костыль
 const BAG_COUNT = 3 // количество ложных кладов
 const PIT_COUNT = 4 // количество ям
 
+const BAD_COLOR = "#f00"
+const GOOD_COLOR = "#40bfbf"
+
 function Labirynth(canvas, n, m, size, isSecondField, canRemove=false) {
     this.n = n // число строк лабиринта
     this.m = m // число столбцов лабиринта
@@ -38,6 +41,7 @@ function Labirynth(canvas, n, m, size, isSecondField, canRemove=false) {
     this.path = []
     this.currentPoint = null
     this.message = ""
+    this.messageColor = BAD_COLOR
 }
 
 // инициализация инструменов
@@ -340,7 +344,7 @@ Labirynth.prototype.DrawPath = function() {
 
 // отрисовка сообщения
 Labirynth.prototype.DrawMessage = function() {
-    this.ctx.fillStyle = "#f00"
+    this.ctx.fillStyle = this.messageColor
     this.ctx.font = (this.size / 3) + "px serif"
     this.ctx.fillText(this.message, this.canvas.width / 2, this.y0 + this.h + 10)
 }
@@ -713,6 +717,7 @@ Labirynth.prototype.PlayToolMakeMove = function(ix, iy) {
 // работа инструмента "ИГРА"
 Labirynth.prototype.PlayToolMouseClick = function(ix, iy, button) {
     if (button == 0) {
+        this.MakeMessage("")
         this.PlayToolMakeMove(ix, iy)
         return
     }
@@ -866,16 +871,10 @@ Labirynth.prototype.HaveWall = function(x, y, dx, dy) {
 }
 
 // отображение сообщения
-Labirynth.prototype.MakeMessage = function(msg) {
+Labirynth.prototype.MakeMessage = function(msg, color) {
     this.message = msg
+    this.messageColor = color
     this.Draw()
-    let labyrinth = this
-
-    setTimeout(function() {
-        labyrinth.message = ""
-        labyrinth.Draw()
-        labyrinth.MouseMove({ offsetX: 0, offsetY: 0 })
-    }, 1000)
 }
 
 // ыполнение хода стрелками
@@ -908,12 +907,14 @@ Labirynth.prototype.MakeMove = function(direction) {
     }
 
     let haveWall = this.HaveWall(x, y, dx, dy)
+    this.message = name + " можно"
+    this.messageColor = GOOD_COLOR
 
     if (x + dx < 0 || x + dx >= this.m || y + dy < 0 || y + dy >= this.n) {
         if (haveWall)
             this.MakeMessage(name + " нельзя, граница лабиринта!")
         else
-            this.MakeMessage(name + " можно, это выход из лабиринта!")
+            this.MakeMessage(name + " можно, это выход из лабиринта!", GOOD_COLOR)
         return
     }
 
@@ -923,6 +924,7 @@ Labirynth.prototype.MakeMove = function(direction) {
     }
 
     this.PlayToolMakeMove(x + dx, y + dy)
+
     this.Draw()
 }
 
