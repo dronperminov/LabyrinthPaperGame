@@ -718,15 +718,18 @@ Labirynth.prototype.MouseDown = function(e) {
 
 // добавление нового лабиринта
 Labirynth.prototype.AddNewLabirynth = function() {
+    let n = this.canRemove ? this.n : this.n * 2 - 1
+    let m = this.canRemove ? this.m : this.m * 2 - 1
+
     let canvas = document.createElement("canvas")
-    canvas.width = (this.m * 2 - 1) * this.size + 100
-    canvas.height = (this.n * 2 - 1) * this.size + 50
+    canvas.width = m * this.size + 100
+    canvas.height = n * this.size + 50
 
     document.body.appendChild(canvas)
 
-    let labyrinth = new Labirynth(canvas, this.n * 2 - 1, this.m * 2 - 1, this.size, true, true)
+    let labyrinth = new Labirynth(canvas, n, m, this.size, true, true)
     labyrinth.toolIndex = 0
-    labyrinth.path.push({ x: this.n - 1, y: this.m - 1 })
+    labyrinth.path.push({ x: Math.floor(n / 2), y: Math.floor(m / 2) })
     labyrinth.Draw()
 }
 
