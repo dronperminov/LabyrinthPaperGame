@@ -808,7 +808,12 @@ Labirynth.prototype.HaveWall = function(x, y, dx, dy) {
     let my = this.y0 + (y + 0.5 + dy / 2) * this.size
 
     let wall = this.GetWallByPoint(mx, my)
-    return wall != null && this.GetWallIndex(wall) > -1
+
+    if (wall == null)
+        return false
+
+    let index = this.GetWallIndex(wall)
+    return index > -1 && !this.walls[index].isCleared
 }
 
 // ыполнение хода стрелками
@@ -821,22 +826,39 @@ Labirynth.prototype.MakeMove = function(direction) {
     let y = this.path[last].y
     let dx = 0
     let dy = 0
+    let name = "";
 
-    if (direction == "Up" && y > 0) {
+    if (direction == "Up") {
         dy = -1
+        name = "Вверх"
     }
-    else if (direction == "Down" && y < this.n - 1) {
+    else if (direction == "Down") {
         dy = 1
+        name = "Вниз"
     }
-    else if (direction == "Left" && x > 0) {
+    else if (direction == "Left") {
         dx = -1
+        name = "Влево"
     }
-    else if (direction == "Right" && x < this.m - 1) {
+    else if (direction == "Right") {
         dx = 1
+        name = "Вправо"
     }
 
-    if (this.HaveWall(x, y, dx, dy))
+    let haveWall = this.HaveWall(x, y, dx, dy)
+
+    if (x + dx < 0 || x + dx >= this.m || y + dy < 0 || y + dy >= this.n) {
+        if (haveWall)
+            alert(name + " нельзя, граница лабиринта!")
+        else
+            alert(name + " можно, это выход из лабиринта!")
         return
+    }
+
+    if (haveWall) {
+        alert(name + " нельзя, там стена!")
+        return
+    }
 
     this.PlayToolMakeMove(x + dx, y + dy)
     this.Draw()
