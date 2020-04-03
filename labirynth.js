@@ -19,7 +19,7 @@ function Labirynth(canvas, n, m, size, isSecondField, canRemove=false) {
 	this.isSecondField = isSecondField
 	this.canRemove = canRemove
 
-	this.letters = "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЭЮЯ"
+	this.letters = "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	this.controlWidth = 50 // ширина отступа для блока управления
 	this.delta = 7 // зазор для поиска стен в пикселях
 
@@ -39,16 +39,13 @@ function Labirynth(canvas, n, m, size, isSecondField, canRemove=false) {
 // инициализация инструменов
 Labirynth.prototype.InitTools = function() {
 	this.tools = [ PLAY, WALL, ARBALET, TREASURE, BAG, TRAP, CRUTCH, PIT ] // набор инструментов
-	this.objects = []
+	this.toolsIndexes = []
+	this.toolsObjects = []
 	this.toolIndex = 1
 
-	for (let i = 0; i < this.tools.length + 7; i++) {
-		this.objects[i] = {
-			x: -1,
-			y: -1,
-			isSet: false,
-			index: Math.min(i, this.tools.length - 1)
-		}
+	for (let i = 0; i < this.tools.length; i++) {
+		this.toolsObjects[i] = []
+		this.toolsIndexes[this.tools[i]] = i
 	}
 
 	// параметры блока управления
@@ -67,7 +64,6 @@ Labirynth.prototype.InitTools = function() {
 	this.toolsImages.push([document.getElementById("crutch-img"), document.getElementById("crutch-hover-img")])
 	this.toolsImages.push([document.getElementById("pit-img"), document.getElementById("pit-hover-img")])
 
-	this.pitIndex = -1
 	this.isPitStart = false
 }
 
@@ -275,23 +271,21 @@ Labirynth.prototype.DrawObjects = function() {
 	this.ctx.lineWidth = 1
 	
 	this.ctx.beginPath()
-	for (let i = 0; i < this.objects.length; i++) {
-		if (!this.objects[i].isSet)
-			continue
+	for (let i = 0; i < this.toolsObjects.length; i++) {
+		for (let j = 0; j < this.toolsObjects[i].length; j++) {
+			x = this.x0 + this.toolsObjects[i][j].x * this.size
+			y = this.y0 + this.toolsObjects[i][j].y * this.size
 
-		x = this.x0 + this.objects[i].x * this.size
-		y = this.y0 + this.objects[i].y * this.size
-		index = this.objects[i].index
-
-		if (this.tools[index] == PIT) {
-			let id = i - this.tools.length + 1
-			this.ctx.font = (this.size / 3) + "px serif"
-			this.ctx.textAlign = "right"
-			this.ctx.fillText(PITS[id], x + this.size - 2, y + this.size - 8)
-			this.ctx.drawImage(this.toolsImages[index][0], x + 2, y + 2, this.size - 8, this.size - 8)
-		}
-		else {
-			this.ctx.drawImage(this.toolsImages[index][0], x + 2, y + 2, this.size - 4, this.size - 4)
+			if (this.tools[i] == PIT) {
+				let id = this.toolsObjects[i][j].id
+				this.ctx.font = (this.size / 3) + "px serif"
+				this.ctx.textAlign = "right"
+				this.ctx.fillText(PITS[id], x + this.size - 2, y + this.size - 8)
+				this.ctx.drawImage(this.toolsImages[i][0], x + 2, y + 2, this.size - 8, this.size - 8)
+			}
+			else {
+				this.ctx.drawImage(this.toolsImages[i][0], x + 2, y + 2, this.size - 4, this.size - 4)
+			}
 		}
 	}
 }
@@ -339,43 +333,40 @@ Labirynth.prototype.Draw = function() {
 }
 
 // удаление дыры
-Labirynth.prototype.RemovePit = function(index) {
-	let start = index - this.tools.length + 1
-	let second = start % 2 ? index - 1 : index + 1
-	let next = Math.max(index, second) + 1
+Labirynth.prototype.RemovePit = function(j) {
+	let i = this.toolsIndexes[PIT]
 
-	// сдвигаем элементы на 2 влево
-	for (let i = next; i < this.objects.length; i++) {
-		this.objects[i - 2].x = this.objects[i].x
-		this.objects[i - 2].y = this.objects[i].y
-		this.objects[i - 2].isSet = this.objects[i].isSet
-		this.objects[i - 2].index = this.objects[i].index
-	}
+	if (j % 2)
+		j--;
 
-	// очищаем освободившиеся ячейки
-	this.objects[this.objects.length - 2].isSet = false
-	this.objects[this.objects.length - 1].isSet = false
-	this.pitIndex -= 2
+	this.toolsObjects[i].splice(j, 2);
+
+	for (let j = 0; j < this.toolsObjects[i].length; j++)
+		this.toolsObjects[i][j].id = j
 }
 
 Labirynth.prototype.RemoveTool = function(x, y) {
-	for(let index = 0; index < this.objects.length; index++) {
-		if (this.objects[index].isSet && this.objects[index].x == x && this.objects[index].y == y) {
-			
-			if (this.objects[index].index >= this.tools.length - 1 && !this.isSecondField) // это дыра
-				this.RemovePit(index)
-			else
-				this.objects[index].isSet = false // удаляем этот инструмент
-			break
+	for (let i = 0; i < this.toolsObjects.length; i++) {
+		for (let j = 0; j < this.toolsObjects[i].length; j++) {
+			if (this.toolsObjects[i][j].x == x && this.toolsObjects[i][j].y == y) {
+				if (this.tools[i] == PIT && !this.isSecondField) {
+					this.RemovePit(j)
+				}
+				else {
+					this.toolsObjects[i].splice(j, 1);
+				}
+				return
+			}
 		}
 	}
 }
 
 // проверка клетки на свободу
 Labirynth.prototype.IsCellEmpty = function(x, y) {
-	for (let i = 0; i < this.objects.length; i++)
-		if (this.objects[i].isSet && this.objects[i].x == x && this.objects[i].y == y)
-			return false
+	for (let i = 0; i < this.toolsObjects.length; i++)
+		for (let j = 0; j < this.toolsObjects[i].length; j++)
+			if (this.toolsObjects[i][j].x == x && this.toolsObjects[i][j].y == y)
+				return false
 
 	return true
 }
@@ -404,13 +395,13 @@ Labirynth.prototype.IsMouseInControls = function(mx, my) {
 
 // проверка возможности использования инструмента
 Labirynth.prototype.CanUseTool = function(index) {
-	if (this.tools[index] == PIT && this.pitIndex == 7) // если хотим выбрать дыру, а они уже все есть
+	if (this.tools[index] == PIT && this.toolsObjects[index].length == 8) // если хотим выбрать дыру, а они уже все есть
 		return false
 
 	if (this.tools[index] != PIT && this.isPitStart)
 		return false // не даём менять управление, если не поставили вторую дыру
 
-	if (this.tools[index] != PIT && this.objects[index].isSet)
+	if (this.tools[index] != PIT && this.toolsObjects[index].length > 0)
 		return false
 
 	if (this.tools[index] == PIT && this.isSecondField)
@@ -559,11 +550,9 @@ Labirynth.prototype.PitToolMouseClick = function(ix, iy, button) {
 	else {
 		this.isPitStart = false
 	}
-	
-	this.pitIndex++
-	this.objects[this.toolIndex + this.pitIndex].x = ix
-	this.objects[this.toolIndex + this.pitIndex].y = iy
-	this.objects[this.toolIndex + this.pitIndex].isSet = true
+
+	let count = this.toolsObjects[this.toolIndex].length
+	this.toolsObjects[this.toolIndex].push({ x: ix, y: iy, id: count })
 }
 
 // работа инструментов кроме дыры
@@ -576,9 +565,7 @@ Labirynth.prototype.OtherToolMouseClick = function(ix, iy, button) {
 	if (!this.IsCellEmpty(ix, iy))
 			return
 
-	this.objects[this.toolIndex].x = ix
-	this.objects[this.toolIndex].y = iy
-	this.objects[this.toolIndex].isSet = true
+	this.toolsObjects[this.toolIndex].push({ x: ix, y: iy })
 }
 
 // клик мыши по клетки лабиринта
@@ -687,14 +674,16 @@ Labirynth.prototype.KeyDown = function(e) {
 		if (e.shiftKey)
 			key++
 
-		let index = this.tools.length - 1 + key
+		if (!this.IsCellEmpty(this.currentPoint.x, this.currentPoint.y)) // если клетка уже занята
+			return // то выходим
 
-		if (!this.IsCellEmpty(this.currentPoint.x, this.currentPoint.y))
-			return
+		let pit = this.toolsIndexes[PIT]
 
-		this.objects[index].x = this.currentPoint.x
-		this.objects[index].y = this.currentPoint.y
-		this.objects[index].isSet = true
+		for (let i = 0; i < this.toolsObjects[pit].length; i++)
+			if (this.toolsObjects[pit][i].id == key) // если эта яма уже есть
+				return // то выходим
+
+		this.toolsObjects[pit].push({ x: this.currentPoint.x, y: this.currentPoint.y, id: key }) // иначе добавляем яму
 	}
 
 	this.Draw()
