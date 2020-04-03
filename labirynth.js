@@ -582,10 +582,61 @@ Labirynth.prototype.SetWallState = function(ix, iy, isCleared) {
     }
 }
 
+// обработка ямы на первом поле
+Labirynth.prototype.PitProcessingFirstField = function(ix, iy) {
+    let pits = this.toolsObjects[this.toolsIndexes[PIT]]
+
+    for (let i = 0; i < pits.length; i += 2) {
+        if (pits[i].x == ix && pits[i].y == iy) {
+            ix = pits[i + 1].x
+            iy = pits[i + 1].y
+
+            this.path.push({x: ix, y: iy })
+            return
+        }
+    }
+}
+
+// обработка ямы на втором поле
+Labirynth.prototype.PitProcessingSecondField = function(ix, iy) {
+    let pits = this.toolsObjects[this.toolsIndexes[PIT]]
+    let id = -1
+
+    for (let i = 0; i < pits.length; i++) {
+        if (pits[i].x == ix && pits[i].y == iy && pits[i].id % 2 == 0) {
+            id = pits[i].id
+            break
+        }
+    }
+
+    if (id == -1)
+        return
+
+    for (let i = 0; i < pits.length; i++) {
+        if (pits[i].id == id + 1) {
+            ix = pits[i].x
+            iy = pits[i].y
+
+            this.path.push({x: ix, y: iy })
+        }
+    }
+}
+
+// обработка ям
+Labirynth.prototype.PitProcessing = function(ix, iy) {
+    if (this.isSecondField) {
+        this.PitProcessingSecondField(ix, iy)
+    }
+    else {
+        this.PitProcessingFirstField(ix, iy)
+    }
+}
+
 // выполнение хода
 Labirynth.prototype.PlayToolMakeMove = function(ix, iy) {
     if (this.path.length == 0) {
         this.path.push({ x: ix, y: iy })
+        this.PitProcessing(ix, iy)
         return
     }
 
@@ -597,6 +648,7 @@ Labirynth.prototype.PlayToolMakeMove = function(ix, iy) {
         return // то ничего не меняем
 
     this.path.push({ x: ix, y: iy })
+    this.PitProcessing(ix, iy)
 
     if (!this.isSecondField) // не удаляем стены на первом поле
         return
