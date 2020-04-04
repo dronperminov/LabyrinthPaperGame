@@ -1064,15 +1064,18 @@ Labirynth.prototype.ObjectsProcessing = function(ix, iy) {
         for (let j = 0; j < objects.length; j++) {
             if (objects[j].x == ix && objects[j].y == iy) {
                 let message = ""
+                let color = BAD_COLOR
 
-                if (this.tools[i] == BAG || this.tools[i] == TREASURE) {
+                if ((this.tools[i] == BAG || this.tools[i] == TREASURE) && objects[j].status == 0) {
                     message = "Вы нашли клад"
+                    color = GOOD_COLOR
                 }
                 else if (this.tools[i] == ARBALET) {
                     message = "Вы наткнулись на арбалет"
                 }
                 else if (this.tools[i] == CRUTCH) {
                     message = "Вы нашли костыль"
+                    color = GOOD_COLOR
                 }
                 else if (this.tools[i] == TRAP) {
                     message = "Вы попали в капкан"
@@ -1081,7 +1084,8 @@ Labirynth.prototype.ObjectsProcessing = function(ix, iy) {
                     message = "Вы попали на выход ямы №" + Math.floor(objects[j].id / 2 + 1)
                 }
 
-                this.MakeMessage(message)
+                if (message != "")
+                    this.MakeMessage(message, color)
                 return
             }
         }
