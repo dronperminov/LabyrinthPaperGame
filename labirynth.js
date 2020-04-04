@@ -142,6 +142,10 @@ Labirynth.prototype.InitEvents = function() {
 
 // добавление стены
 Labirynth.prototype.AddWall = function(x, y, isHorizontal) {
+    for (let i = 0; i < this.walls.length; i++)
+        if (this.walls[i].x == x && this.walls[i].y == y && this.walls[i].isHorizontal == isHorizontal)
+            return
+
     this.walls.push({
         x: x,
         y: y,
@@ -943,6 +947,28 @@ Labirynth.prototype.ControlsMouseMove = function(mx, my) {
     this.canvas.style.cursor = "pointer"
 }
 
+// проверка, что стена является границей лабиринта
+Labirynth.prototype.IsBorderWall = function(wall) {
+    if (wall.isHorizontal)
+        return wall.y == 0 || wall.y == this.n
+
+    return wall.x == 0 || wall.x == this.m
+}
+
+// построение всей стены
+Labirynth.prototype.MakeBorder = function(wall) {
+    if (!this.isSecondField || !this.IsBorderWall(wall) || wall.status != WALL_CLEARED)
+        return
+
+    let n = wall.isHorizontal ? this.m : this.n
+
+    for (let i = 0; i < n; i++)
+        if (wall.isHorizontal)
+            this.AddWall(i, wall.y, true)
+        else
+            this.AddWall(wall.x, i, false)
+}
+
 // работа инструмента "СТЕНА"
 Labirynth.prototype.WallToolMouseClick = function(mx, my, button) {
     let wall = this.GetWallByPoint(mx, my)
@@ -965,6 +991,7 @@ Labirynth.prototype.WallToolMouseClick = function(mx, my, button) {
     if (index == -1) {
         wall.status = button == 2 ? WALL_CLEARED : WALL_DEFAULT
         this.walls.push(wall)
+        this.MakeBorder(wall)
         return
     }
 
@@ -972,10 +999,12 @@ Labirynth.prototype.WallToolMouseClick = function(mx, my, button) {
         return
 
     if (button == 2 && this.walls[index].status == WALL_CLEARED || button == 0 && this.walls[index].status == WALL_DEFAULT) {
+        this.MakeBorder(this.walls[index])
         this.walls.splice(index, 1)
     }
     else {
         this.walls[index].status = this.walls[index].status == WALL_CLEARED ? WALL_DEFAULT : WALL_CLEARED
+        this.MakeBorder(this.walls[index])
     }
 }
 
