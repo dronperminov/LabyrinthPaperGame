@@ -91,6 +91,16 @@
 				labirynth1.currentPoint = null
 			}
 		})
+
+		// защита от перезагрузки
+		let myEvent = window.attachEvent || window.addEventListener;
+		let chkevent = window.attachEvent ? 'onbeforeunload' : 'beforeunload';
+
+		myEvent(chkevent, function(e) {
+			let confirmationMessage = ' ';
+			(e || window.event).returnValue = confirmationMessage;
+			return confirmationMessage;
+		});
 	</script>
 </body>
 </html>
