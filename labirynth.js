@@ -423,6 +423,25 @@ Labirynth.prototype.RemoveTool = function(x, y) {
     }
 }
 
+// проверка наличия не очищенных стен кроме границ
+Labirynth.prototype.HaveInnerWalls = function() {
+    for (let i = 0; i < this.walls.length; i++) {
+        if (this.walls[i].isCleared)
+            continue
+
+        if (this.walls[i].isHorizontal) {
+            if (this.walls[i].y > 0 || this.walls[i].y < this.n)
+                return true
+        }
+        else {
+            if (this.walls[i].x > 0 || this.walls[i].x < this.m)
+                return true
+        }
+    }
+
+    return false
+}
+
 Labirynth.prototype.HaveActivatedTreasure = function() {
     let treasures = this.toolsObjects[this.toolsIndexes[TREASURE]]
 
@@ -506,7 +525,7 @@ Labirynth.prototype.CanUseTool = function(index) {
         return true
 
     if (this.tools[index] == GRENADE)
-        return this.toolsObjects[index].length > 0
+        return this.toolsObjects[index].length > 0 && this.HaveInnerWalls()
 
     if (this.tools[index] != PIT && this.toolsObjects[index].length > 0)
         return false
