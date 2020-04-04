@@ -674,8 +674,8 @@ Labirynth.prototype.MakeWave = function(startX, startY) {
 
                     if (pitIndex + 1 < pits.length) {
                         let pit = pits[pitIndex + 1]
-                        dirX.push(pit.x - x)
-                        dirY.push(pit.y - y)
+                        dirX = [ pit.x - x ]
+                        dirY = [ pit.y - y ]
                     }
                 }
 
