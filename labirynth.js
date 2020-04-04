@@ -48,6 +48,7 @@ function Labirynth(canvas, n, m, size, isSecondField, canRemove=false) {
     this.currentPoint = null
     this.message = ""
     this.messageColor = BAD_COLOR
+    this.needDrawWave = true
 }
 
 // инициализация инструменов
@@ -404,6 +405,7 @@ Labirynth.prototype.DrawPath = function() {
 
 // отрисовка сообщения
 Labirynth.prototype.DrawMessage = function() {
+    this.ctx.beginPath()
     this.ctx.fillStyle = this.messageColor
     this.ctx.font = (this.size / 3) + "px serif"
     this.ctx.textAlign = "center"
@@ -735,7 +737,7 @@ Labirynth.prototype.ProcessQuits = function(quits) {
 
 // отрисовка распространения волны
 Labirynth.prototype.DrawWave = function() {
-    if (this.isSecondField)
+    if (this.isSecondField || !this.needDrawWave)
         return
 
     let quits = this.GetQuits()
@@ -1317,6 +1319,7 @@ Labirynth.prototype.MakeMove = function(direction) {
     let dx = 0
     let dy = 0
     let name = "";
+    this.needDrawWave = false
 
     if (direction == "ArrowUp" || direction == "KeyW") {
         dy = -1
@@ -1344,17 +1347,20 @@ Labirynth.prototype.MakeMove = function(direction) {
             this.MakeMessage(name + " нельзя, граница лабиринта!")
         else
             this.MakeMessage(name + " можно, это выход из лабиринта!", GOOD_COLOR)
+
+        this.needDrawWave = true
         return
     }
 
     if (haveWall) {
         this.MakeMessage(name + " нельзя, там стена!")
+        this.needDrawWave = true
         return
     }
 
     this.PlayToolMakeMove(x + dx, y + dy)
-
     this.Draw()
+    this.needDrawWave = true
 }
 
 // обработка нажатия клавиши
