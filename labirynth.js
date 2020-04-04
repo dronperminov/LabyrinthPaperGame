@@ -17,6 +17,10 @@ const GRENADE_COUNT = 3 // количество гранат
 const BAD_COLOR = "#f00"
 const GOOD_COLOR = "#40bfbf"
 
+const WALL_DEFAULT = 0 // статус обычной стены
+const WALL_CLEARED = 1 // статус удалённой стены
+const WALL_DESTROYED = 2 // статус разрушенной стены
+
 function Labirynth(canvas, n, m, size, isSecondField, canRemove=false) {
     this.n = n // число строк лабиринта
     this.m = m // число столбцов лабиринта
@@ -141,7 +145,7 @@ Labirynth.prototype.AddWall = function(x, y, isHorizontal) {
         x: x,
         y: y,
         isHorizontal: isHorizontal,
-        isCleared: false
+        status: WALL_DEFAULT
     })
 }
 
@@ -210,7 +214,7 @@ Labirynth.prototype.GetWallByPoint = function(mx, my) {
         x: minX,
         y: minY,
         isHorizontal: index < 2,
-        isCleared: false
+        status: WALL_DEFAULT
     }
 }
 
@@ -253,15 +257,15 @@ Labirynth.prototype.DrawWalls = function() {
     this.ctx.lineWidth = 2
 
     for (let i = 0; i < this.walls.length; i++) {
-        let points = this.GetWallPoints(this.walls[i])
+        let wall = this.walls[i]
+        let points = this.GetWallPoints(wall)
         let x1 = this.x0 + points.x1 * this.size
         let x2 = this.x0 + points.x2 * this.size
         let y1 = this.y0 + points.y1 * this.size
         let y2 = this.y0 + points.y2 * this.size
 
-
-        if (this.walls[i].isCleared) {
-            if (this.walls[i].isHorizontal) {
+        if (wall.status == WALL_CLEARED) {
+            if (wall.isHorizontal) {
                 x1 += 1
                 x2 -= 1
             }
@@ -272,11 +276,23 @@ Labirynth.prototype.DrawWalls = function() {
         }
 
         this.ctx.beginPath()
+        this.ctx.setLineDash([])
+
+        let color = "#000"
+
+        if (wall.status == WALL_CLEARED)
+            color = "#fff"
+        else if (wall.status == WALL_DESTROYED) {
+            this.ctx.setLineDash([2, 4])
+        }
+
         this.ctx.moveTo(x1, y1)
         this.ctx.lineTo(x2, y2)
-        this.ctx.strokeStyle = this.walls[i].isCleared ? "#fff" : "#000"
+        this.ctx.strokeStyle = color
         this.ctx.stroke()
     }
+
+    this.ctx.setLineDash([])
 }
 
 // отрисовка блока управления
@@ -426,15 +442,15 @@ Labirynth.prototype.RemoveTool = function(x, y) {
 // проверка наличия не очищенных стен кроме границ
 Labirynth.prototype.HaveInnerWalls = function() {
     for (let i = 0; i < this.walls.length; i++) {
-        if (this.walls[i].isCleared)
+        if (this.walls[i].status != WALL_DEFAULT)
             continue
 
         if (this.walls[i].isHorizontal) {
-            if (this.walls[i].y > 0 || this.walls[i].y < this.n)
+            if (this.walls[i].y > 0 && this.walls[i].y < this.n)
                 return true
         }
         else {
-            if (this.walls[i].x > 0 || this.walls[i].x < this.m)
+            if (this.walls[i].x > 0 && this.walls[i].x < this.m)
                 return true
         }
     }
@@ -555,6 +571,11 @@ Labirynth.prototype.WallToolMouseMove = function(mx, my) {
     if (wall == null)
         return
 
+    let index = this.GetWallIndex(wall)
+
+    if (index > -1 && this.walls[index].status == WALL_DESTROYED)
+        return
+
     let points = this.GetWallPoints(wall)
 
     this.ctx.strokeStyle = "#f88"
@@ -600,7 +621,7 @@ Labirynth.prototype.GrenadeToolMouseMove = function(mx, my) {
 
     let index = this.GetWallIndex(wall)
 
-    if (index == -1 || this.walls[index].isCleared)
+    if (index == -1 || this.walls[index].status != WALL_DEFAULT)
         return
 
     let points = this.GetWallPoints(wall)
@@ -700,16 +721,19 @@ Labirynth.prototype.WallToolMouseClick = function(mx, my, button) {
     let index = this.GetWallIndex(wall)
 
     if (index == -1) {
-        wall.isCleared = button == 2
+        wall.status = button == 2 ? WALL_CLEARED : WALL_DEFAULT
         this.walls.push(wall)
+        return
+    }
+
+    if (this.walls[index].status == WALL_DESTROYED)
+        return
+
+    if (button == 2 && this.walls[index].status == WALL_CLEARED || button == 0 && this.walls[index].status == WALL_DEFAULT) {
+        this.walls.splice(index, 1)
     }
     else {
-        if (button == 2 && this.walls[index].isCleared || button == 0 && !this.walls[index].isCleared) {
-            this.walls.splice(index, 1)
-        }
-        else {
-            this.walls[index].isCleared = !this.walls[index].isCleared
-        }
+        this.walls[index].status = this.walls[index].status == WALL_CLEARED ? WALL_DEFAULT : WALL_CLEARED
     }
 }
 
@@ -725,10 +749,10 @@ Labirynth.prototype.SetWallState = function(ix, iy, isCleared) {
     let index = this.GetWallIndex(wall)
 
     if (index > -1) {
-        this.walls[index].isCleared = isCleared
+        this.walls[index].status = isCleared ? WALL_CLEARED : WALL_DEFAULT
     }
     else {
-        wall.isCleared = isCleared
+        wall.status = isCleared ? WALL_CLEARED : WALL_DEFAULT
         this.walls.push(wall)
     }
 }
@@ -881,10 +905,10 @@ Labirynth.prototype.GrenadeToolMouseClick = function(mx, my) {
 
     let index = this.GetWallIndex(wall)
 
-    if (index == -1 || this.walls[index].isCleared)
+    if (index == -1 || this.walls[index].status != WALL_DEFAULT)
         return
 
-    this.walls[index].isCleared = true
+    this.walls[index].status = WALL_DESTROYED
     this.toolsObjects[this.toolsIndexes[GRENADE]].pop()
 }
 
@@ -1032,7 +1056,7 @@ Labirynth.prototype.HaveWall = function(x, y, dx, dy) {
         return false
 
     let index = this.GetWallIndex(wall)
-    return index > -1 && !this.walls[index].isCleared
+    return index > -1 && this.walls[index].status == WALL_DEFAULT
 }
 
 // отображение сообщения
