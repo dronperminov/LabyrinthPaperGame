@@ -351,7 +351,7 @@ Labirynth.prototype.DrawObjects = function() {
                 this.ctx.fillText(Math.floor(id / 2) + 1, x + this.size - 2, y + this.size - 8)
                 this.ctx.drawImage(id % 2 ? this.toolsImages[i][0] : this.pitStartImage, x + 2, y + 2, this.size - 8, this.size - 8)
             }
-            else if (this.tools[i] == BAG || this.tools[i] == TREASURE) {
+            else if (this.tools[i] == BAG || this.tools[i] == TREASURE || this.tools[i] == ARBALET || this.tools[i] == CRUTCH) {
                 let status = this.toolsObjects[i][j].status
                 this.ctx.drawImage(this.toolsImages[i][status], x + 2, y + 2, this.size - 4, this.size - 4)
             }
@@ -1074,11 +1074,18 @@ Labirynth.prototype.ObjectsProcessing = function(ix, iy) {
                     color = GOOD_COLOR
                 }
                 else if (this.tools[i] == ARBALET) {
-                    message = "Вы наткнулись на арбалет"
+                    if (objects[j].status == 0)
+                        message = "Вы наткнулись на арбалет"
+
+                    objects[j].status = 1
                 }
                 else if (this.tools[i] == CRUTCH) {
-                    message = "Вы нашли костыль"
-                    color = GOOD_COLOR
+                    if (objects[j].status == 0) {
+                        message = "Вы нашли костыль"
+                        color = GOOD_COLOR
+                    }
+
+                    objects[j].status = 1
                 }
                 else if (this.tools[i] == TRAP) {
                     message = "Вы попали в капкан"
@@ -1187,7 +1194,7 @@ Labirynth.prototype.OtherToolMouseClick = function(ix, iy, button) {
     if (!this.IsCellEmpty(ix, iy))
             return
 
-    if (this.tools[this.toolIndex] == TREASURE || this.tools[this.toolIndex] == BAG)
+    if ([TREASURE, BAG, ARBALET, CRUTCH].indexOf(this.tools[this.toolIndex]) > -1)
         this.toolsObjects[this.toolIndex].push({ x: ix, y: iy, status: 0 })
     else
         this.toolsObjects[this.toolIndex].push({ x: ix, y: iy })
