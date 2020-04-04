@@ -347,6 +347,7 @@ Labirynth.prototype.DrawObjects = function() {
                 let id = this.toolsObjects[i][j].id
                 this.ctx.font = (this.size / 3) + "px serif"
                 this.ctx.textAlign = "right"
+                this.ctx.fillStyle = "#000"
                 this.ctx.fillText(Math.floor(id / 2) + 1, x + this.size - 2, y + this.size - 8)
                 this.ctx.drawImage(id % 2 ? this.toolsImages[i][0] : this.pitStartImage, x + 2, y + 2, this.size - 8, this.size - 8)
             }
@@ -685,7 +686,7 @@ Labirynth.prototype.MakeWave = function(startX, startY) {
                     if (x2 < 0 || y2 < 0 || x2 >= this.m || y2 >= this.n || matrix[y2][x2] != -1)
                         continue
 
-                    if (!this.HaveWall(x, y, dirX[k], dirY[k])) {
+                    if (!this.HaveWall(x, y, dirX[k], dirY[k]) || k >= 4) {
                         matrix[y2][x2] = d + 1
                         stop = false
                     }
