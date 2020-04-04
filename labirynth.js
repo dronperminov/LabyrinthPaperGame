@@ -991,13 +991,16 @@ Labirynth.prototype.SetWallState = function(ix, iy, isCleared) {
 
     let index = this.GetWallIndex(wall)
 
-    if (index > -1) {
-        this.walls[index].status = isCleared ? WALL_CLEARED : WALL_DEFAULT
-    }
-    else {
+    if (index == -1) {
         wall.status = isCleared ? WALL_CLEARED : WALL_DEFAULT
         this.walls.push(wall)
+        return
     }
+
+    if (this.walls[index].status != WALL_CLEARED)
+        return
+
+    this.walls[index].status = isCleared ? WALL_CLEARED : WALL_DEFAULT
 }
 
 // обработка ямы на первом поле
