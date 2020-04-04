@@ -218,6 +218,16 @@ Labirynth.prototype.GetWallByPoint = function(mx, my) {
     }
 }
 
+// получение индекса входа в яму
+Labirynth.prototype.GetPitIndex = function(x, y) {
+    let pit = this.toolsIndexes[PIT]
+    for (let i = 0; i < this.toolsObjects[pit].length; i += 2)
+        if (this.toolsObjects[pit][i].x == x && this.toolsObjects[pit][i].y == y)
+            return i
+
+    return -1
+}
+
 // отрисовка координатных обозначений
 Labirynth.prototype.DrawCoordinates = function() {
     this.ctx.font = (this.size / 2) + "px serif"
@@ -308,6 +318,7 @@ Labirynth.prototype.DrawControls = function() {
         if (this.tools[i] == GRENADE) {
             this.ctx.font = (this.size / 2.5) + "px serif"
             this.ctx.textAlign = "right"
+            this.ctx.fillStyle = "#000"
             this.ctx.fillText(this.toolsObjects[i].length, x + this.cw - 2, y + this.cw - 8)
             this.ctx.drawImage(this.toolsImages[i][i == this.toolIndex ? 1 : 0], x + 2, y + 2, this.cw - 8, this.cw - 8)
         }
@@ -387,6 +398,8 @@ Labirynth.prototype.DrawPath = function() {
         this.ctx.textAlign = "center"
         this.ctx.fillText(this.letters[x] + (y + 1), this.cx0 + this.cw / 2, this.cy0 + this.h - this.size / 2)
     }
+
+    this.ctx.beginPath()
 }
 
 // отрисовка сообщения
@@ -651,7 +664,19 @@ Labirynth.prototype.MakeWave = function(startX, startY) {
                 let dirX = [ -1, 1, 0, 0 ]
                 let dirY = [ 0, 0, -1, 1 ]
 
-                for (let k = 0; k < 4; k++) {
+                let pitIndex = this.GetPitIndex(x, y)
+
+                if (pitIndex > -1) {
+                    let pits = this.toolsObjects[this.toolsIndexes[PIT]]
+
+                    if (pitIndex + 1 < pits.length) {
+                        let pit = pits[pitIndex + 1]
+                        dirX.push(pit.x - x)
+                        dirY.push(pit.y - y)
+                    }
+                }
+
+                for (let k = 0; k < dirX.length; k++) {
                     let x2 = x + dirX[k]
                     let y2 = y + dirY[k]
 
@@ -674,13 +699,13 @@ Labirynth.prototype.MakeWave = function(startX, startY) {
 Labirynth.prototype.ProcessQuits = function(quits) {
     if (quits.length < 4) {
         this.message = "Недостаточно выходов (" + quits.length + ")"
-        this.color = BAD_COLOR
+        this.messageColor = BAD_COLOR
         return false
     }
 
     if (quits.length > 4) {
         this.message = "Слишком много выходов (" + quits.length + ")"
-        this.color = BAD_COLOR
+        this.messageColor = BAD_COLOR
         return false
     }
 
@@ -710,7 +735,7 @@ Labirynth.prototype.ProcessQuits = function(quits) {
 
 // отрисовка распространения волны
 Labirynth.prototype.DrawWave = function() {
-    if (this.isSecondField || this.tools[this.toolIndex] != WALL)
+    if (this.isSecondField)
         return
 
     let quits = this.GetQuits()
@@ -718,25 +743,47 @@ Labirynth.prototype.DrawWave = function() {
     if (!this.ProcessQuits(quits))
         return
 
+    let pits = this.toolsObjects[this.toolsIndexes[PIT]]
+    let pitQuits = []
+
+    for (let i = 1; i < pits.length; i += 2)
+        pitQuits.push({ x: pits[i].x, y: pits[i].y })
+
     this.message = ""
 
     let res = this.MakeWave(quits[0].x, quits[0].y)
     let matrix = res.matrix
-    let d = res.d
+    let haveUnreachable = false
 
     for (let i = 1; i < quits.length; i++) {
         res = this.MakeWave(quits[i].x, quits[i].y)
 
-        for (let x = 0; x < this.m; x++)
-            for (let y = 0; y < this.n; y++)
-                if (res.matrix[y][x] == -1 || res.matrix[y][x] < matrix[y][x])
+        for (let x = 0; x < this.m; x++) {
+            for (let y = 0; y < this.n; y++) {
+                if (res.matrix[y][x] == -1) {
                     matrix[y][x] = res.matrix[y][x]
+                    haveUnreachable = true;
+                }
+            }
+        }
 
-        if (res.d > d)
-            d = res.d
     }
 
-    let haveUnreachable = false
+    if (!haveUnreachable) {
+        for (let i = 0; i < pitQuits.length; i++) {
+            res = this.MakeWave(pitQuits[i].x, pitQuits[i].y)
+
+            for (let x = 0; x < this.m; x++) {
+                for (let y = 0; y < this.n; y++) {
+                    if (res.matrix[y][x] == -1) {
+                        matrix[y][x] = res.matrix[y][x]
+                        haveUnreachable = true;
+                    }
+                }
+            }
+
+        }
+    }
 
     for (let i = 0; i < this.n; i++) {
         for (let j = 0; j < this.m; j++) {
