@@ -393,6 +393,7 @@ Labirynth.prototype.DrawPath = function() {
 Labirynth.prototype.DrawMessage = function() {
     this.ctx.fillStyle = this.messageColor
     this.ctx.font = (this.size / 3) + "px serif"
+    this.ctx.textAlign = "center"
     this.ctx.fillText(this.message, this.canvas.width / 2, this.y0 + this.h + 10)
 }
 
@@ -402,6 +403,7 @@ Labirynth.prototype.Draw = function() {
 
     this.DrawCoordinates()
     this.DrawGrid()
+    this.DrawWave()
     this.DrawWalls()
     this.DrawObjects()
     this.DrawControls()
@@ -562,6 +564,197 @@ Labirynth.prototype.GetWallIndex = function(wall) {
             return i
 
     return -1
+}
+
+// получение координат выходов
+Labirynth.prototype.GetQuits = function() {
+    let quits = []
+
+    let left = []
+    let right = []
+    let top = []
+    let bottom = []
+
+    for (let i = 0; i < this.n; i++) {
+        left[i] = false
+        right[i] = false
+    }
+
+    for (let i = 0; i < this.m; i++) {
+        top[i] = false
+        bottom[i] = false
+    }
+
+    for (let i = 0; i < this.walls.length; i++) {
+        if (this.walls[i].status != WALL_DEFAULT)
+            continue
+
+        if (this.walls[i].isHorizontal) {
+            if (this.walls[i].y == 0)
+                top[this.walls[i].x] = true
+
+            if (this.walls[i].y == this.n)
+                bottom[this.walls[i].x] = true
+        }
+        else {
+            if (this.walls[i].x == 0)
+                left[this.walls[i].y] = true
+
+            if (this.walls[i].x == this.m)
+                right[this.walls[i].y] = true
+        }
+    }
+
+    for (let i = 0; i < this.n; i++) {
+        if (!left[i])
+            quits.push({ x: 0, y: i })
+
+        if (!right[i])
+            quits.push({ x: this.m - 1, y: i })
+    }
+
+    for (let i = 0; i < this.m; i++) {
+        if (!top[i])
+            quits.push({ x: i, y: 0 })
+
+        if (!bottom[i])
+            quits.push({ x: i, y: this.n - 1 })
+    }
+
+    return quits
+}
+
+// распространение волны из заданной точки
+Labirynth.prototype.MakeWave = function(startX, startY) {
+    let n = this.n * this.m
+    let matrix = []
+
+    for (let i = 0; i < this.n; i++) {
+        matrix[i] = []
+
+        for (let j = 0; j < this.m; j++)
+            matrix[i][j] = -1
+    }
+
+    matrix[startY][startX] = 0
+    let stop = false
+    let d = 0
+
+    for (d = 0; !stop; d++) {
+        stop = true
+
+        for (let x = 0; x < this.m; x++) {
+            for (let y = 0; y < this.n; y++) {
+                if (matrix[y][x] != d)
+                    continue
+
+                let dirX = [ -1, 1, 0, 0 ]
+                let dirY = [ 0, 0, -1, 1 ]
+
+                for (let k = 0; k < 4; k++) {
+                    let x2 = x + dirX[k]
+                    let y2 = y + dirY[k]
+
+                    if (x2 < 0 || y2 < 0 || x2 >= this.m || y2 >= this.n || matrix[y2][x2] != -1)
+                        continue
+
+                    if (!this.HaveWall(x, y, dirX[k], dirY[k])) {
+                        matrix[y2][x2] = d + 1
+                        stop = false
+                    }
+                }
+            }
+        }
+    }
+
+    return { matrix: matrix, d: d }
+}
+
+// обработка выходов
+Labirynth.prototype.ProcessQuits = function(quits) {
+    if (quits.length < 4) {
+        this.message = "Недостаточно выходов (" + quits.length + ")"
+        this.color = BAD_COLOR
+        return false
+    }
+
+    if (quits.length > 4) {
+        this.message = "Слишком много выходов (" + quits.length + ")"
+        this.color = BAD_COLOR
+        return false
+    }
+
+    let sides = [ 0, 0, 0, 0]
+
+    for (let i = 0; i < quits.length; i++) {
+        if (quits[i].x == 0)
+            sides[0]++
+        else if (quits[i].x == this.m - 1)
+            sides[1]++
+        else if (quits[i].y == 0)
+            sides[2]++
+        else if (quits[i].y == this.n - 1)
+            sides[3]++
+    }
+
+    for (let i = 0; i < 4; i++) {
+        if (sides[i] != 1) {
+            this.message = "Выходы расставлены некорректно"
+            this.messageColor = BAD_COLOR
+            return false
+        }
+    }
+
+    return true
+}
+
+// отрисовка распространения волны
+Labirynth.prototype.DrawWave = function() {
+    if (this.isSecondField || this.tools[this.toolIndex] != WALL)
+        return
+
+    let quits = this.GetQuits()
+
+    if (!this.ProcessQuits(quits))
+        return
+
+    this.message = ""
+
+    let res = this.MakeWave(quits[0].x, quits[0].y)
+    let matrix = res.matrix
+    let d = res.d
+
+    for (let i = 1; i < quits.length; i++) {
+        res = this.MakeWave(quits[i].x, quits[i].y)
+
+        for (let x = 0; x < this.m; x++)
+            for (let y = 0; y < this.n; y++)
+                if (res.matrix[y][x] == -1 || res.matrix[y][x] < matrix[y][x])
+                    matrix[y][x] = res.matrix[y][x]
+
+        if (res.d > d)
+            d = res.d
+    }
+
+    let haveUnreachable = false
+
+    for (let i = 0; i < this.n; i++) {
+        for (let j = 0; j < this.m; j++) {
+            if (matrix[i][j] != -1)
+                continue
+
+            haveUnreachable = true
+            let x = this.x0 + j * this.size
+            let y = this.y0 + i * this.size
+            this.ctx.fillStyle = "#ddd"
+            this.ctx.fillRect(x, y, this.size, this.size)
+        }
+    }
+
+    if (haveUnreachable) {
+        this.message = "Есть недостижимые клетки"
+        this.messageColor = BAD_COLOR
+    }
 }
 
 // обработка перемещения мыши во время режима "WALL"
