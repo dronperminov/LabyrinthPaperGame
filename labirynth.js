@@ -581,7 +581,7 @@ Labirynth.prototype.GrenadeToolMouseMove = function(mx, my) {
 
     let index = this.GetWallIndex(wall)
 
-    if (index == -1)
+    if (index == -1 || this.walls[index].isCleared)
         return
 
     let points = this.GetWallPoints(wall)
@@ -862,7 +862,7 @@ Labirynth.prototype.GrenadeToolMouseClick = function(mx, my) {
 
     let index = this.GetWallIndex(wall)
 
-    if (index == -1)
+    if (index == -1 || this.walls[index].isCleared)
         return
 
     this.walls[index].isCleared = true
