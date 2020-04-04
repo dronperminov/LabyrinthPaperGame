@@ -621,23 +621,33 @@ Labirynth.prototype.GetQuits = function() {
         }
     }
 
-    for (let i = 0; i < this.n; i++) {
-        if (!left[i])
-            quits.push({ x: 0, y: i })
+    let sides = [ 0, 0, 0, 0 ]
 
-        if (!right[i])
+    for (let i = 0; i < this.n; i++) {
+        if (!left[i]) {
+            quits.push({ x: 0, y: i })
+            sides[0]++
+        }
+
+        if (!right[i]) {
             quits.push({ x: this.m - 1, y: i })
+            sides[1]++
+        }
     }
 
     for (let i = 0; i < this.m; i++) {
-        if (!top[i])
+        if (!top[i]) {
             quits.push({ x: i, y: 0 })
+            sides[2]++
+        }
 
-        if (!bottom[i])
+        if (!bottom[i]) {
             quits.push({ x: i, y: this.n - 1 })
+            sides[3]++
+        }
     }
 
-    return quits
+    return { quits: quits, sides: sides }
 }
 
 // распространение волны из заданной точки
@@ -699,7 +709,7 @@ Labirynth.prototype.MakeWave = function(startX, startY) {
 }
 
 // обработка выходов
-Labirynth.prototype.ProcessQuits = function(quits) {
+Labirynth.prototype.ProcessQuits = function(quits, sides) {
     if (quits.length < 4) {
         this.message = "Недостаточно выходов (" + quits.length + ")"
         this.messageColor = BAD_COLOR
@@ -710,19 +720,6 @@ Labirynth.prototype.ProcessQuits = function(quits) {
         this.message = "Слишком много выходов (" + quits.length + ")"
         this.messageColor = BAD_COLOR
         return false
-    }
-
-    let sides = [ 0, 0, 0, 0]
-
-    for (let i = 0; i < quits.length; i++) {
-        if (quits[i].x == 0)
-            sides[0]++
-        else if (quits[i].x == this.m - 1)
-            sides[1]++
-        else if (quits[i].y == 0)
-            sides[2]++
-        else if (quits[i].y == this.n - 1)
-            sides[3]++
     }
 
     for (let i = 0; i < 4; i++) {
@@ -741,9 +738,11 @@ Labirynth.prototype.DrawWave = function() {
     if (this.isSecondField || !this.needDrawWave)
         return
 
-    let quits = this.GetQuits()
+    let quitsResult = this.GetQuits()
+    let quits = quitsResult.quits
+    let sides = quitsResult.sides
 
-    if (!this.ProcessQuits(quits))
+    if (!this.ProcessQuits(quits, sides))
         return
 
     let pits = this.toolsObjects[this.toolsIndexes[PIT]]
