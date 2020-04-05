@@ -491,19 +491,14 @@ Labirynth.prototype.HaveInnerWalls = function() {
         if (this.walls[i].status != WALL_DEFAULT)
             continue
 
-        if (this.walls[i].isHorizontal) {
-            if (this.walls[i].y > 0 && this.walls[i].y < this.n)
-                return true
-        }
-        else {
-            if (this.walls[i].x > 0 && this.walls[i].x < this.m)
-                return true
-        }
+        if (!this.IsBorderWall(this.walls[i]))
+            return true
     }
 
     return false
 }
 
+// есть ли активированый клад
 Labirynth.prototype.HaveActivatedTreasure = function() {
     let treasures = this.toolsObjects[this.toolsIndexes[TREASURE]]
 
@@ -608,6 +603,16 @@ Labirynth.prototype.GetWallIndex = function(wall) {
             return i
 
     return -1
+}
+
+// получение индекса стены по точке
+Labirynth.prototype.GetWallIndexByPoint = function(mx, my) {
+    let wall = this.GetWallByPoint(mx, my)
+
+    if (wall == null)
+        return -1
+
+    return this.GetWallIndex(wall)
 }
 
 // получение координат выходов
@@ -724,7 +729,7 @@ Labirynth.prototype.MakeWave = function(startX, startY) {
                     if (x2 < 0 || y2 < 0 || x2 >= this.m || y2 >= this.n || matrix[y2][x2] != -1)
                         continue
 
-                    if (!this.HaveWall(x, y, dirX[k], dirY[k]) || k >= 4) {
+                    if (pitIndex > -1 || !this.HaveWall(x, y, dirX[k], dirY[k])) {
                         matrix[y2][x2] = d + 1
                         stop = false
                     }
@@ -878,26 +883,18 @@ Labirynth.prototype.PlayToolMouseMove = function(ix, iy) {
 
 // обработка перемещения мыши в режиме "GRENADE"
 Labirynth.prototype.GrenadeToolMouseMove = function(mx, my) {
-    if (mx <= this.x0 + this.delta || mx >= this.x0 + this.w - this.delta)
+    if (!this.IsMouseInMaze(mx, my, -this.delta))
         return
 
-    if (my <= this.y0 + this.delta || my >= this.y0 + this.h - this.delta)
-        return
-
-    let wall = this.GetWallByPoint(mx, my)
-
-    if (wall == null)
-        return
-
-    let index = this.GetWallIndex(wall)
+    let index = this.GetWallIndexByPoint(mx, my)
 
     if (index == -1 || this.walls[index].status != WALL_DEFAULT)
         return
 
-    let points = this.GetWallPoints(wall)
+    let points = this.GetWallPoints(this.walls[index])
 
-    let ix = wall.isHorizontal ? points.x1 : (points.x1 + points.x2 - 1) / 2
-    let iy = wall.isHorizontal ? (points.y1 + points.y2 - 1) / 2 : points.y1
+    let ix = this.walls[index].isHorizontal ? points.x1 : (points.x1 + points.x2 - 1) / 2
+    let iy = this.walls[index].isHorizontal ? (points.y1 + points.y2 - 1) / 2 : points.y1
 
     let x = this.IxToMx(ix)
     let y = this.IyToMy(iy)
@@ -1202,18 +1199,10 @@ Labirynth.prototype.PlayToolMouseClick = function(ix, iy, button) {
 
 // работа инструмента "ГРАНАТА"
 Labirynth.prototype.GrenadeToolMouseClick = function(mx, my) {
-    if (mx <= this.x0 + this.delta || mx >= this.x0 + this.w - this.delta)
+    if (!this.IsMouseInMaze(mx, my, -this.delta))
         return
 
-    if (my <= this.y0 + this.delta || my >= this.y0 + this.h - this.delta)
-        return
-
-    let wall = this.GetWallByPoint(mx, my)
-
-    if (wall == null)
-        return
-
-    let index = this.GetWallIndex(wall)
+    let index = this.GetWallIndexByPoint(mx, my)
 
     if (index == -1 || this.walls[index].status != WALL_DEFAULT)
         return
@@ -1227,15 +1216,9 @@ Labirynth.prototype.PitToolMouseClick = function(ix, iy, button) {
     if (!this.IsCellEmpty(ix, iy) || button != 0)
         return
 
-    if (!this.isPitStart) {
-        this.isPitStart = true
-    }
-    else {
-        this.isPitStart = false
-    }
-
     let count = this.toolsObjects[this.toolIndex].length
     this.toolsObjects[this.toolIndex].push({ x: ix, y: iy, id: count })
+    this.isPitStart = !this.isPitStart
 }
 
 // работа инструментов кроме дыры
@@ -1359,13 +1342,8 @@ Labirynth.prototype.RemoveLabyrinth = function() {
 Labirynth.prototype.HaveWall = function(x, y, dx, dy) {
     let mx = this.IxToMx(x + 0.5 + dx / 2)
     let my = this.IyToMy(y + 0.5 + dy / 2)
+    let index = this.GetWallIndexByPoint(mx, my)
 
-    let wall = this.GetWallByPoint(mx, my)
-
-    if (wall == null)
-        return false
-
-    let index = this.GetWallIndex(wall)
     return index > -1 && this.walls[index].status == WALL_DEFAULT
 }
 
