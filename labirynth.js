@@ -1417,6 +1417,13 @@ Labirynth.prototype.KeyDown = function(e) {
             e.preventDefault()
         }
 
+        if (e.code == "KeyG") {
+            let generator = new MazeGenerator(this.n, this.m)
+            generator.Generate()
+            generator.SetLabitynth(this)
+            this.Draw()
+        }
+
         return
     }
 
