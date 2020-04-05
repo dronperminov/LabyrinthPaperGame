@@ -143,8 +143,12 @@ Labirynth.prototype.InitEvents = function() {
 // добавление стены
 Labirynth.prototype.AddWall = function(x, y, isHorizontal) {
     for (let i = 0; i < this.walls.length; i++)
-        if (this.walls[i].x == x && this.walls[i].y == y && this.walls[i].isHorizontal == isHorizontal)
+        if (this.walls[i].x == x && this.walls[i].y == y && this.walls[i].isHorizontal == isHorizontal) {
+            if (this.walls[i].status == WALL_CLEARED)
+                this.walls[i].status = WALL_DEFAULT
+
             return
+        }
 
     this.walls.push({
         x: x,
@@ -957,16 +961,17 @@ Labirynth.prototype.IsBorderWall = function(wall) {
 
 // построение всей стены
 Labirynth.prototype.MakeBorder = function(wall) {
-    if (!this.isSecondField || !this.IsBorderWall(wall) || wall.status != WALL_CLEARED)
+    if (!this.IsBorderWall(wall) || wall.status != WALL_CLEARED)
         return
 
     let n = wall.isHorizontal ? this.m : this.n
 
-    for (let i = 0; i < n; i++)
-        if (wall.isHorizontal)
+    for (let i = 0; i < n; i++) {
+        if (wall.isHorizontal && i != wall.x)
             this.AddWall(i, wall.y, true)
-        else
+        else if (!wall.isHorizontal && i != wall.y)
             this.AddWall(wall.x, i, false)
+    }
 }
 
 // работа инструмента "СТЕНА"
