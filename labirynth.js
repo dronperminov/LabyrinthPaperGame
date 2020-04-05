@@ -168,10 +168,30 @@ Labirynth.prototype.GetWallPoints = function(wall) {
     }
 }
 
+// перевод горизонтальной координаты мыши в координаты в лабиринте
+Labirynth.prototype.MxToIx = function(mx) {
+    return (mx - this.x0) / this.size
+}
+
+// перевод вертикальной координаты мыши в координаты в лабиринте
+Labirynth.prototype.MyToIy = function(my) {
+    return (my - this.y0) / this.size
+}
+
+// перевод горизонтальной координаты лабиринта в координаты мыши
+Labirynth.prototype.IxToMx = function(ix) {
+    return this.x0 + ix * this.size
+}
+
+// перевод вертикальной координаты лабиринта в координаты мыши
+Labirynth.prototype.IyToMy = function(iy) {
+    return this.y0 + iy * this.size
+}
+
 // получение стены в заданной точке
 Labirynth.prototype.GetWallByPoint = function(mx, my) {
-    let x = (mx - this.x0) / this.size
-    let y = (my - this.y0) / this.size
+    let x = this.MxToIx(mx)
+    let y = this.MyToIy(my)
     let delta = this.delta / this.size
 
     if (x < -delta || y < -delta || x > this.m + delta || y > this.m + delta)
@@ -245,11 +265,11 @@ Labirynth.prototype.DrawCoordinates = function() {
     this.ctx.textBaseline = "middle"
 
     for (let i = 0; i < this.n; i++)
-        this.ctx.fillText(i + 1, this.x0 - 5, this.y0 + (i + 0.5) * this.size, 20)
+        this.ctx.fillText(i + 1, this.x0 - 5, this.IyToMy(i + 0.5), 20)
 
     this.ctx.textAlign = "center"
     for (let i = 0; i < this.m; i++)
-        this.ctx.fillText(this.letters[i], this.x0 + (i + 0.5) * this.size, this.y0 - this.size / 3)
+        this.ctx.fillText(this.letters[i], this.IxToMx(i + 0.5), this.y0 - this.size / 3)
 }
 
 // отрисовка сетки
@@ -258,15 +278,15 @@ Labirynth.prototype.DrawGrid = function() {
 
     for (let i = 0; i <= this.n; i++) {
         this.ctx.beginPath()
-        this.ctx.moveTo(this.x0, this.y0 + i * this.size)
-        this.ctx.lineTo(this.x0 + this.w, this.y0 + i * this.size)
+        this.ctx.moveTo(this.x0, this.IyToMy(i))
+        this.ctx.lineTo(this.x0 + this.w, this.IyToMy(i))
         this.ctx.stroke()
     }
 
     for (let i = 0; i <= this.m; i++) {
         this.ctx.beginPath()
-        this.ctx.moveTo(this.x0 + i * this.size, this.y0)
-        this.ctx.lineTo(this.x0 + i * this.size, this.y0 + this.h)
+        this.ctx.moveTo(this.IxToMx(i), this.y0)
+        this.ctx.lineTo(this.IxToMx(i), this.y0 + this.h)
         this.ctx.stroke()
     }
 }
@@ -278,10 +298,10 @@ Labirynth.prototype.DrawWalls = function() {
     for (let i = 0; i < this.walls.length; i++) {
         let wall = this.walls[i]
         let points = this.GetWallPoints(wall)
-        let x1 = this.x0 + points.x1 * this.size
-        let x2 = this.x0 + points.x2 * this.size
-        let y1 = this.y0 + points.y1 * this.size
-        let y2 = this.y0 + points.y2 * this.size
+        let x1 = this.IxToMx(points.x1)
+        let x2 = this.IxToMx(points.x2)
+        let y1 = this.IyToMy(points.y1)
+        let y2 = this.IyToMy(points.y2)
 
         if (wall.status == WALL_CLEARED) {
             if (wall.isHorizontal) {
@@ -348,8 +368,8 @@ Labirynth.prototype.DrawObjects = function() {
     this.ctx.beginPath()
     for (let i = 0; i < this.toolsObjects.length; i++) {
         for (let j = 0; j < this.toolsObjects[i].length; j++) {
-            x = this.x0 + this.toolsObjects[i][j].x * this.size
-            y = this.y0 + this.toolsObjects[i][j].y * this.size
+            x = this.IxToMx(this.toolsObjects[i][j].x)
+            y = this.IyToMy(this.toolsObjects[i][j].y)
 
             if (this.tools[i] == PIT) {
                 let id = this.toolsObjects[i][j].id
@@ -379,8 +399,8 @@ Labirynth.prototype.DrawPath = function() {
     let colorLength = 20
 
     for (let i = 0; i < this.path.length; i++) {
-        let x = this.x0 + this.path[i].x * this.size
-        let y = this.y0 + this.path[i].y * this.size
+        let x = this.IxToMx(this.path[i].x)
+        let y = this.IyToMy(this.path[i].y)
         let r = minRadius + dr * (i + 1) / this.path.length
         let red = 255 * (i + 1 + Math.max(0, colorLength - n)) / Math.max(n, colorLength)
 
@@ -801,8 +821,8 @@ Labirynth.prototype.DrawWave = function() {
                 continue
 
             haveUnreachable = true
-            let x = this.x0 + j * this.size
-            let y = this.y0 + i * this.size
+            let x = this.IxToMx(j)
+            let y = this.IyToMy(i)
             this.ctx.fillStyle = "#ddd"
             this.ctx.fillRect(x, y, this.size, this.size)
         }
@@ -831,16 +851,16 @@ Labirynth.prototype.WallToolMouseMove = function(mx, my) {
     this.ctx.strokeStyle = "#f88"
     this.ctx.lineWidth = 2
     this.ctx.beginPath()
-    this.ctx.moveTo(this.x0 + points.x1 * this.size, this.y0 + points.y1 * this.size)
-    this.ctx.lineTo(this.x0 + points.x2 * this.size, this.y0 + points.y2 * this.size)
+    this.ctx.moveTo(this.IxToMx(points.x1), this.IyToMy(points.y1))
+    this.ctx.lineTo(this.IxToMx(points.x2), this.IyToMy(points.y2))
     this.ctx.stroke()
     this.ctx.lineWidth = 1
 }
 
 // обработка перемещения мыши в режиме "PLAY"
 Labirynth.prototype.PlayToolMouseMove = function(ix, iy) {
-    let x = this.x0 + ix * this.size
-    let y = this.y0 + iy * this.size
+    let x = this.IxToMx(ix)
+    let y = this.IyToMy(iy)
 
     this.canvas.style.cursor = "pointer"
     this.ctx.beginPath()
@@ -879,8 +899,8 @@ Labirynth.prototype.GrenadeToolMouseMove = function(mx, my) {
     let ix = wall.isHorizontal ? points.x1 : (points.x1 + points.x2 - 1) / 2
     let iy = wall.isHorizontal ? (points.y1 + points.y2 - 1) / 2 : points.y1
 
-    let x = this.x0 + ix * this.size
-    let y = this.y0 + iy * this.size
+    let x = this.IxToMx(ix)
+    let y = this.IyToMy(iy)
     let img = this.toolsImages[this.toolIndex][0]
 
     this.ctx.drawImage(img, x + 2, y + 2, this.size - 4, this.size - 4)
@@ -892,8 +912,8 @@ Labirynth.prototype.OtherToolMouseMove = function(ix, iy) {
     if (!this.IsCellEmpty(ix, iy))
             return
 
-    let x = this.x0 + ix * this.size
-    let y = this.y0 + iy * this.size
+    let x = this.IxToMx(ix)
+    let y = this.IyToMy(iy)
     let img;
 
     if (this.tools[this.toolIndex] == PIT && !this.isPitStart)
@@ -914,8 +934,8 @@ Labirynth.prototype.MazeMouseMove = function(mx, my) {
     if (!this.IsMouseInMaze(mx, my))
         return
 
-    let ix = Math.floor((mx - this.x0) / this.size)
-    let iy = Math.floor((my - this.y0) / this.size)
+    let ix = Math.floor(this.MxToIx(mx))
+    let iy = Math.floor(this.MyToIy(my))
 
     if (this.tools[this.toolIndex] == PLAY) {
         this.PlayToolMouseMove(ix, iy)
@@ -979,8 +999,8 @@ Labirynth.prototype.WallToolMouseClick = function(mx, my, button) {
     let wall = this.GetWallByPoint(mx, my)
 
     if (wall == null) {
-        let ix = Math.floor((mx - this.x0) / this.size)
-        let iy = Math.floor((my - this.y0) / this.size)
+        let ix = Math.floor(this.MxToIx(mx))
+        let iy = Math.floor(this.MyToIy(my))
 
         if (button == 2) {
             this.RemoveTool(ix, iy)
@@ -1015,8 +1035,8 @@ Labirynth.prototype.WallToolMouseClick = function(mx, my, button) {
 
 // очистка стены в заданной точке поля
 Labirynth.prototype.SetWallState = function(ix, iy, isCleared) {
-    let mx = this.x0 + ix * this.size
-    let my = this.y0 + iy * this.size
+    let mx = this.IxToMx(ix)
+    let my = this.IyToMy(iy)
     let wall = this.GetWallByPoint(mx, my)
 
     if (wall == null)
@@ -1244,8 +1264,8 @@ Labirynth.prototype.MazeMouseClick = function(mx, my, btn) {
     if (!this.IsMouseInMaze(mx, my))
         return
 
-    let ix = Math.floor((mx - this.x0) / this.size)
-    let iy = Math.floor((my - this.y0) / this.size)
+    let ix = Math.floor(this.MxToIx(mx))
+    let iy = Math.floor(this.MyToIy(my))
 
     if (this.tools[this.toolIndex] == PLAY) {
         this.PlayToolMouseClick(ix, iy, btn)
@@ -1337,8 +1357,8 @@ Labirynth.prototype.RemoveLabyrinth = function() {
 
 // проверка наличия стены для хода (x->x+dx, y->y+dy)
 Labirynth.prototype.HaveWall = function(x, y, dx, dy) {
-    let mx = this.x0 + (x + 0.5 + dx / 2) * this.size
-    let my = this.y0 + (y + 0.5 + dy / 2) * this.size
+    let mx = this.IxToMx(x + 0.5 + dx / 2)
+    let my = this.IyToMy(y + 0.5 + dy / 2)
 
     let wall = this.GetWallByPoint(mx, my)
 
