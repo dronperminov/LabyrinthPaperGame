@@ -1092,8 +1092,11 @@ Labirynth.prototype.PitProcessingSecondField = function(ix, iy) {
             iy = pits[i].y
 
             this.path.push({x: ix, y: iy })
+            return true
         }
     }
+
+    this.AddNewLabirynth(id + 1)
 
     return true
 }
@@ -1281,7 +1284,7 @@ Labirynth.prototype.ControlsMouseClick = function(mx, my) {
     }
     else if (this.tools[index] == REMOVE) {
         if (confirm("Вы точно хотите удалить это поле (" + this.n + "x" + this.m + ")?"))
-            this.RemoveLabyrinth()
+            this.RemoveLabirynth()
     }
 }
 
@@ -1314,7 +1317,7 @@ Labirynth.prototype.MouseDown = function(e) {
 }
 
 // добавление нового лабиринта
-Labirynth.prototype.AddNewLabirynth = function() {
+Labirynth.prototype.AddNewLabirynth = function(pitId = -1) {
     let n = this.canRemove ? this.n : this.n * 2 - 1
     let m = this.canRemove ? this.m : this.m * 2 - 1
 
@@ -1324,14 +1327,20 @@ Labirynth.prototype.AddNewLabirynth = function() {
 
     document.body.appendChild(canvas)
 
-    let labyrinth = new Labirynth(canvas, n, m, this.size, true, true)
-    labyrinth.toolIndex = 0
-    labyrinth.path.push({ x: Math.floor(n / 2), y: Math.floor(m / 2) })
-    labyrinth.Draw()
+    let labirynth = new Labirynth(canvas, n, m, this.size, true, true)
+    let x = Math.floor(m / 2)
+    let y = Math.floor(n / 2)
+    labirynth.toolIndex = 0
+    labirynth.path.push({ x: x, y: y })
+
+    if (pitId > -1)
+        labirynth.toolsObjects[labirynth.toolsIndexes[PIT]].push({ x: x, y: y, id: pitId })
+
+    labirynth.Draw()
 }
 
 // удаление лабиринта
-Labirynth.prototype.RemoveLabyrinth = function() {
+Labirynth.prototype.RemoveLabirynth = function() {
     document.body.removeChild(this.canvas)
     this.MouseDown = function(e) {}
     this.MouseMove = function(e) {}
