@@ -742,21 +742,23 @@ Labirynth.prototype.MakeWave = function(startX, startY) {
 }
 
 // обработка выходов
-Labirynth.prototype.ProcessQuits = function(quits, sides) {
-    if (quits.length < 4) {
-        this.message = "Недостаточно выходов (" + quits.length + ")"
+Labirynth.prototype.ProcessQuits = function() {
+    let quitsResult = this.GetQuits()
+
+    if (quitsResult.quits.length < 4) {
+        this.message = "Недостаточно выходов (" + quitsResult.quits.length + ")"
         this.messageColor = BAD_COLOR
         return false
     }
 
-    if (quits.length > 4) {
-        this.message = "Слишком много выходов (" + quits.length + ")"
+    if (quitsResult.quits.length > 4) {
+        this.message = "Слишком много выходов (" + quitsResult.quits.length + ")"
         this.messageColor = BAD_COLOR
         return false
     }
 
     for (let i = 0; i < 4; i++) {
-        if (sides[i] != 1) {
+        if (quitsResult.sides[i] != 1) {
             this.message = "Выходы расставлены некорректно"
             this.messageColor = BAD_COLOR
             return false
@@ -766,25 +768,22 @@ Labirynth.prototype.ProcessQuits = function(quits, sides) {
     return true
 }
 
-// отрисовка распространения волны
-Labirynth.prototype.DrawWave = function() {
-    if (this.isSecondField || !this.needDrawWave)
-        return
-
-    let quitsResult = this.GetQuits()
-    let quits = quitsResult.quits
-    let sides = quitsResult.sides
-
-    if (!this.ProcessQuits(quits, sides))
-        return
-
+// получение выходов из ям
+Labirynth.prototype.GetOutputPits = function() {
+    let outputPits = []
     let pits = this.toolsObjects[this.toolsIndexes[PIT]]
-    let pitQuits = []
 
-    for (let i = 1; i < pits.length; i += 2)
-        pitQuits.push({ x: pits[i].x, y: pits[i].y })
+    for (let i = 0; i < pits.length; i++)
+        if (pits[i].id % 2 == 1)
+            outputPits.push(pits[i])
 
-    this.message = ""
+    return outputPits
+}
+
+// проверка на достижимость
+Labirynth.prototype.IsAllReachable = function() {
+    let quits = this.GetQuits().quits
+    let pitQuits = this.GetOutputPits()
 
     let res = this.MakeWave(quits[0].x, quits[0].y)
     let matrix = res.matrix
@@ -820,12 +819,26 @@ Labirynth.prototype.DrawWave = function() {
         }
     }
 
+    return { matrix: matrix, haveUnreachable: haveUnreachable }
+}
+
+// отрисовка распространения волны
+Labirynth.prototype.DrawWave = function() {
+    if (this.isSecondField || !this.needDrawWave)
+        return
+
+    if (!this.ProcessQuits())
+        return
+
+    this.message = ""
+
+    let res = this.IsAllReachable()
+
     for (let i = 0; i < this.n; i++) {
         for (let j = 0; j < this.m; j++) {
-            if (matrix[i][j] != -1)
+            if (res.matrix[i][j] != -1)
                 continue
 
-            haveUnreachable = true
             let x = this.IxToMx(j)
             let y = this.IyToMy(i)
             this.ctx.fillStyle = "#ddd"
@@ -833,7 +846,7 @@ Labirynth.prototype.DrawWave = function() {
         }
     }
 
-    if (haveUnreachable) {
+    if (res.haveUnreachable) {
         this.message = "Есть недостижимые клетки"
         this.messageColor = BAD_COLOR
     }
