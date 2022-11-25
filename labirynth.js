@@ -1349,6 +1349,7 @@ Labirynth.prototype.AddNewLabirynth = function(pitId = -1) {
     if (pitId > -1)
         labirynth.toolsObjects[labirynth.toolsIndexes[PIT]].push({ x: x, y: y, id: pitId })
 
+    labirynth.toolsObjects[labirynth.toolsIndexes[GRENADE]].length = this.toolsObjects[this.toolsIndexes[GRENADE]].length
     labirynth.Draw()
 }
 
